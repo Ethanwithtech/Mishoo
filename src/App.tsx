@@ -231,27 +231,29 @@ function BreakOverlay({
   };
 
   return (
-    <main className="breakOverlay">
+    <main className={`breakOverlay ${petMeta.video ? 'videoOverlay' : ''}`}>
+      {petMeta.video && (
+        <video
+          className="breakPetVideoFull"
+          src={petMeta.video}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+        />
+      )}
       <button className="closeButton" onClick={() => close(true)} aria-label={t.skip}>
         <X size={18} /> {t.skip}
       </button>
-      <div className="floatingBlob blobOne" />
-      <div className="floatingBlob blobTwo" />
-      <section className="breakContent">
-        <div className="breakPetStage">
-          {petMeta.video ? (
-            <video
-              className="breakPetVideo"
-              src={petMeta.video}
-              autoPlay
-              muted
-              playsInline
-              preload="auto"
-            />
-          ) : (
+      {!petMeta.video && <div className="floatingBlob blobOne" />}
+      {!petMeta.video && <div className="floatingBlob blobTwo" />}
+      <section className={`breakContent ${petMeta.video ? 'breakContentCompact' : ''}`}>
+        {!petMeta.video && (
+          <div className="breakPetStage">
             <PetPhoto pet={pet} large />
-          )}
-        </div>
+          </div>
+        )}
         <p className="breakEyebrow">{t.overlayEyebrow}</p>
         <h1>{canFinish ? t.overlayDone : t.overlayTitle}</h1>
         <p className="breakMessage">{canFinish ? t.overlayDoneText : t.overlayText}</p>
