@@ -329,19 +329,8 @@ function ControlPanel() {
   const petOptions = Object.entries(PETS) as Array<[PetId, PetMeta]>;
   const progress = 1 - remaining / (settings.workMinutes * 60);
 
-  if (browserBreak) {
-    return (
-      <BreakOverlay
-        duration={browserBreak.breakMinutes * 60}
-        pet={browserBreak.pet}
-        strict={browserBreak.strictMode}
-        language={browserBreak.language}
-        onClose={() => setBrowserBreak(null)}
-      />
-    );
-  }
-
   return (
+    <>
     <main className="appShell">
       <section className="heroCard">
         <div className="heroCopy">
@@ -424,6 +413,16 @@ function ControlPanel() {
 
       <section className="notePanel"><strong>{t.noteTitle}</strong>{t.note}</section>
     </main>
+    {browserBreak && (
+      <BreakOverlay
+        duration={browserBreak.breakMinutes * 60}
+        pet={browserBreak.pet}
+        strict={browserBreak.strictMode}
+        language={browserBreak.language}
+        onClose={() => setBrowserBreak(null)}
+      />
+    )}
+    </>
   );
 }
 

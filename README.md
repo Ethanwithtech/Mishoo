@@ -7,7 +7,7 @@ Mishoo 是一个面向久坐打工人的桌面休息守护应用。到点后，�
 - 工作/休息时长设置
 - `Pawse Mode` 全屏休息遮罩
 - 真实宠物照片：小猫、小狗、兔兔
-- 金毛休息遮罩已支持全屏循环透明 WebM 视频：`public/videos/golden-alpha.webm`
+- 金毛休息遮罩已支持网页背景可见的透明 WebM 覆盖层：`public/videos/golden-alpha.webm`
 - 中文 / English 双语切换
 - 休息期间拦截遮罩窗口内键盘输入
 - 本地休息记录
