@@ -248,19 +248,24 @@ function BreakOverlay({
       </button>
       {!petMeta.video && <div className="floatingBlob blobOne" />}
       {!petMeta.video && <div className="floatingBlob blobTwo" />}
-      <section className={`breakContent ${petMeta.video ? 'breakContentCompact' : ''}`}>
-        {!petMeta.video && (
+      {petMeta.video ? (
+        <section className="breakTimerPill" aria-live="polite">
+          <span>{formatTime(remaining)}</span>
+          {canFinish && <button className="timerFinishButton" onClick={() => close(false)}>{t.finish}</button>}
+        </section>
+      ) : (
+        <section className="breakContent">
           <div className="breakPetStage">
             <PetPhoto pet={pet} large />
           </div>
-        )}
-        <p className="breakEyebrow">{t.overlayEyebrow}</p>
-        <h1>{canFinish ? t.overlayDone : t.overlayTitle}</h1>
-        <p className="breakMessage">{canFinish ? t.overlayDoneText : t.overlayText}</p>
-        <div className="breakTimer">{formatTime(remaining)}</div>
-        <p className="photoCredit">{petMeta.credit}</p>
-        {canFinish && <button className="primaryButton finishButton" onClick={() => close(false)}>{t.finish}</button>}
-      </section>
+          <p className="breakEyebrow">{t.overlayEyebrow}</p>
+          <h1>{canFinish ? t.overlayDone : t.overlayTitle}</h1>
+          <p className="breakMessage">{canFinish ? t.overlayDoneText : t.overlayText}</p>
+          <div className="breakTimer">{formatTime(remaining)}</div>
+          <p className="photoCredit">{petMeta.credit}</p>
+          {canFinish && <button className="primaryButton finishButton" onClick={() => close(false)}>{t.finish}</button>}
+        </section>
+      )}
     </main>
   );
 }
