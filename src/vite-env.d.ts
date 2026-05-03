@@ -5,6 +5,7 @@ interface MishooBridge {
     durationSec: number;
     pet: string;
     strictMode: boolean;
+    language?: 'zh' | 'en';
   }) => Promise<void>;
   closeBreakOverlay: () => Promise<void>;
   getAppVersion: () => Promise<string>;

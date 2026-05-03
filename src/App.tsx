@@ -1,13 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Clock3, Coffee, Heart, PawPrint, Play, Shield, Sparkles } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Clock3, Coffee, Globe2, Heart, PawPrint, Play, Shield, Sparkles, X } from 'lucide-react';
 
-type PetId = 'mishoo-cat' | 'cocoa-dog' | 'pixel-fox';
+type PetId = 'mishoo-cat' | 'cocoa-dog' | 'snow-rabbit';
+type Lang = 'zh' | 'en';
 
 type Settings = {
   workMinutes: number;
   breakMinutes: number;
   pet: PetId;
   strictMode: boolean;
+  language: Lang;
 };
 
 type Stats = {
@@ -16,24 +18,96 @@ type Stats = {
   skippedBreaks: number;
 };
 
-const PETS: Record<PetId, { name: string; description: string; accent: string; variant: string }> = {
+type PetMeta = {
+  name: Record<Lang, string>;
+  description: Record<Lang, string>;
+  image: string;
+  credit: string;
+};
+
+const PETS: Record<PetId, PetMeta> = {
   'mishoo-cat': {
-    name: '咪咻猫',
-    description: '温柔但很坚持的休息守护者',
-    accent: '#f97316',
-    variant: 'cat',
+    name: { zh: '真实小猫 Mia', en: 'Mia the Real Cat' },
+    description: { zh: '一只会认真挡住屏幕的小猫', en: 'A real cat who gently blocks your screen' },
+    image: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=1200&q=85',
+    credit: 'Photo by Eric Han on Unsplash',
   },
   'cocoa-dog': {
-    name: '可可犬',
-    description: '适合需要一点鼓励的工作日',
-    accent: '#8b5cf6',
-    variant: 'dog',
+    name: { zh: '可可小狗', en: 'Cocoa the Dog' },
+    description: { zh: '适合需要一点鼓励的工作日', en: 'A warm companion for long workdays' },
+    image: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=1200&q=85',
+    credit: 'Photo by Jamie Street on Unsplash',
   },
-  'pixel-fox': {
-    name: '赛博狐',
-    description: '轻微科幻感的桌面休息搭子',
-    accent: '#06b6d4',
-    variant: 'fox',
+  'snow-rabbit': {
+    name: { zh: '雪球兔兔', en: 'Snow the Rabbit' },
+    description: { zh: '安静陪你从屏幕前离开一下', en: 'A calm pet that helps you step away' },
+    image: 'https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?auto=format&fit=crop&w=1200&q=85',
+    credit: 'Photo from Unsplash',
+  },
+};
+
+const UI: Record<Lang, Record<string, string>> = {
+  zh: {
+    heroTitle: '让真实宠物替你按下暂停键。',
+    heroText: '咪咻是给久坐打工人的桌面休息守护应用。到点后，真实宠物会走到屏幕前，温柔地挡住工作，让你真正离开屏幕休息一会儿。',
+    start: '开始专注计时',
+    pause: '暂停本轮计时',
+    summon: '立即召唤咪咻',
+    workRound: '本轮工作',
+    willAppear: '咪咻会在时间结束后自动出现。',
+    ready: '准备好后开始计时。',
+    boundary: '休息边界',
+    workMinutes: '工作时长',
+    breakMinutes: '休息时长',
+    strict: '开启 Pawse Mode：休息期间键盘输入会被遮罩拦截，但可以点击按钮安全退出',
+    choosePet: '选择真实宠物',
+    stats: '休息记录',
+    breaks: '次休息',
+    minutes: '分钟',
+    skipped: '次跳过',
+    waiting: '还没有开始，咪咻正在等你。',
+    finished: '咪咻刚刚带你休息了',
+    noteTitle: '当前 MVP 边界：',
+    note: '咪咻会创建一个全屏置顶休息遮罩。为了避免再次卡住屏幕，当前版本始终提供明显的安全退出按钮；它不会读取屏幕内容、摄像头或上传任何数据。',
+    overlayEyebrow: 'Pawse Mode',
+    overlayTitle: '咪咻已经挡住屏幕，请你休息一下。',
+    overlayDone: '休息完成，咪咻把屏幕还给你。',
+    overlayText: '看远处、站起来、喝口水，或者只是闭上眼睛。',
+    overlayDoneText: '如果感觉好一点了，就回到工作；如果还累，可以继续休息。',
+    finish: '回到工作',
+    skip: '现在退出休息屏幕',
+    browserFallback: '当前在浏览器预览中运行，已使用网页内休息遮罩。桌面版会打开真正的全屏窗口。',
+  },
+  en: {
+    heroTitle: 'Let a real pet press pause for you.',
+    heroText: 'Mishoo is a desktop break guardian for people who sit too long. When it is time to rest, a real pet walks onto your screen and gently blocks work so you actually step away.',
+    start: 'Start focus timer',
+    pause: 'Pause this round',
+    summon: 'Summon Mishoo now',
+    workRound: 'Current work round',
+    willAppear: 'Mishoo will appear automatically when time is up.',
+    ready: 'Start the timer when you are ready.',
+    boundary: 'Break boundary',
+    workMinutes: 'Work minutes',
+    breakMinutes: 'Break minutes',
+    strict: 'Enable Pawse Mode: keyboard input is blocked inside the overlay, but the safe exit button is always visible',
+    choosePet: 'Choose a real pet',
+    stats: 'Break stats',
+    breaks: 'breaks',
+    minutes: 'minutes',
+    skipped: 'skipped',
+    waiting: 'Mishoo is waiting for you.',
+    finished: 'Mishoo just helped you rest for',
+    noteTitle: 'Current MVP boundary: ',
+    note: 'Mishoo creates a fullscreen always-on-top break overlay. To avoid trapping you again, this version always shows a clear safe exit button. It does not read your screen, use the camera, or upload data.',
+    overlayEyebrow: 'Pawse Mode',
+    overlayTitle: 'Mishoo is blocking your screen. Please take a break.',
+    overlayDone: 'Break complete. Mishoo gives your screen back.',
+    overlayText: 'Look away, stand up, drink water, or simply close your eyes.',
+    overlayDoneText: 'If you feel better, return to work. If not, keep resting.',
+    finish: 'Back to work',
+    skip: 'Exit break screen now',
+    browserFallback: 'You are running in browser preview, so Mishoo used an in-page overlay. The desktop app opens a real fullscreen window.',
   },
 };
 
@@ -42,6 +116,7 @@ const DEFAULT_SETTINGS: Settings = {
   breakMinutes: 5,
   pet: 'mishoo-cat',
   strictMode: true,
+  language: 'zh',
 };
 
 const DEFAULT_STATS: Stats = {
@@ -77,201 +152,40 @@ function useStoredState<T>(key: string, fallback: T) {
 
 function updateStats(next: Partial<Stats>) {
   const current = readJson<Stats>('mishoo.stats', DEFAULT_STATS);
-  const updated = { ...current, ...next };
-  localStorage.setItem('mishoo.stats', JSON.stringify(updated));
+  localStorage.setItem('mishoo.stats', JSON.stringify({ ...current, ...next }));
 }
 
-function PetIllustration({ pet, large = false }: { pet: PetId; large?: boolean }) {
+function PetPhoto({ pet, large = false }: { pet: PetId; large?: boolean }) {
   const meta = PETS[pet];
 
   return (
-    <div className={`pet ${meta.variant} ${large ? 'petLarge' : ''}`} style={{ '--pet-accent': meta.accent } as React.CSSProperties}>
-      <div className="petEar petEarLeft" />
-      <div className="petEar petEarRight" />
-      <div className="petFace">
-        <div className="petEye petEyeLeft" />
-        <div className="petEye petEyeRight" />
-        <div className="petNose" />
-        <div className="petMouth" />
-        <div className="petWhisker petWhiskerLeft" />
-        <div className="petWhisker petWhiskerRight" />
-      </div>
-      <div className="petBody" />
-      <div className="petTail" />
-    </div>
+    <figure className={`petPhoto ${large ? 'petPhotoLarge' : ''}`}>
+      <img src={meta.image} alt={meta.name.zh} draggable={false} />
+    </figure>
   );
 }
 
-function ControlPanel() {
-  const [settings, setSettings] = useStoredState<Settings>('mishoo.settings', DEFAULT_SETTINGS);
-  const [stats, setStats] = useStoredState<Stats>('mishoo.stats', DEFAULT_STATS);
-  const [running, setRunning] = useState(false);
-  const [remaining, setRemaining] = useState(settings.workMinutes * 60);
-  const [lastBreak, setLastBreak] = useState<string>('还没有开始，咪咻正在等你。');
-
-  useEffect(() => {
-    if (!running) {
-      setRemaining(settings.workMinutes * 60);
-    }
-  }, [settings.workMinutes, running]);
-
-  useEffect(() => {
-    if (!running) return;
-
-    const timer = window.setInterval(() => {
-      setRemaining((current) => {
-        if (current <= 1) {
-          window.clearInterval(timer);
-          setRunning(false);
-          void window.mishoo?.showBreakOverlay({
-            durationSec: settings.breakMinutes * 60,
-            pet: settings.pet,
-            strictMode: settings.strictMode,
-          });
-          const nextStats = {
-            completedBreaks: stats.completedBreaks + 1,
-            totalBreakMinutes: stats.totalBreakMinutes + settings.breakMinutes,
-          };
-          setStats((currentStats) => ({ ...currentStats, ...nextStats }));
-          setLastBreak(`咪咻刚刚带你休息了 ${settings.breakMinutes} 分钟。`);
-          return settings.workMinutes * 60;
-        }
-        return current - 1;
-      });
-    }, 1000);
-
-    return () => window.clearInterval(timer);
-  }, [running, setStats, settings.breakMinutes, settings.pet, settings.strictMode, settings.workMinutes, stats.completedBreaks, stats.totalBreakMinutes]);
-
-  const petOptions = Object.entries(PETS) as Array<[PetId, (typeof PETS)[PetId]]>;
-  const progress = 1 - remaining / (settings.workMinutes * 60);
-
-  const startBreakNow = () => {
-    setRunning(false);
-    void window.mishoo?.showBreakOverlay({
-      durationSec: settings.breakMinutes * 60,
-      pet: settings.pet,
-      strictMode: settings.strictMode,
-    });
-  };
-
-  return (
-    <main className="appShell">
-      <section className="heroCard">
-        <div className="heroCopy">
-          <div className="brandRow">
-            <div className="brandMark"><PawPrint size={22} /></div>
-            <span>Mishoo / 咪咻</span>
-          </div>
-          <h1>让一只宠物替你按下暂停键。</h1>
-          <p>
-            咪咻是给久坐打工人的桌面休息守护应用。到点后，宠物会走到屏幕前，温柔地挡住工作，让你真正离开屏幕休息一会儿。
-          </p>
-          <div className="heroActions">
-            <button className="primaryButton" onClick={() => setRunning((value) => !value)}>
-              {running ? <Coffee size={18} /> : <Play size={18} />}
-              {running ? '暂停本轮计时' : '开始专注计时'}
-            </button>
-            <button className="ghostButton" onClick={startBreakNow}>
-              立即召唤咪咻
-            </button>
-          </div>
-        </div>
-        <div className="heroPetPanel">
-          <PetIllustration pet={settings.pet} large />
-          <div className="petName">{PETS[settings.pet].name}</div>
-          <div className="petHint">{PETS[settings.pet].description}</div>
-        </div>
-      </section>
-
-      <section className="dashboardGrid">
-        <article className="timerCard panel">
-          <div className="panelTitle"><Clock3 size={18} /> 本轮工作</div>
-          <div className="timeDisplay">{formatTime(remaining)}</div>
-          <div className="progressTrack"><div className="progressFill" style={{ width: `${Math.round(progress * 100)}%` }} /></div>
-          <p>{running ? '咪咻会在时间结束后自动出现。' : '准备好后开始计时。'}</p>
-        </article>
-
-        <article className="panel">
-          <div className="panelTitle"><Shield size={18} /> 休息边界</div>
-          <label className="field">
-            <span>工作时长</span>
-            <input
-              type="number"
-              min="1"
-              max="180"
-              value={settings.workMinutes}
-              onChange={(event) => setSettings({ ...settings, workMinutes: Number(event.target.value) })}
-            />
-          </label>
-          <label className="field">
-            <span>休息时长</span>
-            <input
-              type="number"
-              min="1"
-              max="60"
-              value={settings.breakMinutes}
-              onChange={(event) => setSettings({ ...settings, breakMinutes: Number(event.target.value) })}
-            />
-          </label>
-          <label className="toggleField">
-            <input
-              type="checkbox"
-              checked={settings.strictMode}
-              onChange={(event) => setSettings({ ...settings, strictMode: event.target.checked })}
-            />
-            <span>开启 Pawse Mode：休息期间不可轻易关闭遮罩</span>
-          </label>
-        </article>
-
-        <article className="panel petPickerPanel">
-          <div className="panelTitle"><Sparkles size={18} /> 选择守护宠物</div>
-          <div className="petPicker">
-            {petOptions.map(([id, pet]) => (
-              <button
-                key={id}
-                className={`petOption ${settings.pet === id ? 'selected' : ''}`}
-                onClick={() => setSettings({ ...settings, pet: id })}
-              >
-                <PetIllustration pet={id} />
-                <span>{pet.name}</span>
-              </button>
-            ))}
-          </div>
-        </article>
-
-        <article className="panel statsPanel">
-          <div className="panelTitle"><Heart size={18} /> 休息记录</div>
-          <div className="statsGrid">
-            <div><strong>{stats.completedBreaks}</strong><span>次休息</span></div>
-            <div><strong>{stats.totalBreakMinutes}</strong><span>分钟</span></div>
-            <div><strong>{stats.skippedBreaks}</strong><span>次跳过</span></div>
-          </div>
-          <p>{lastBreak}</p>
-        </article>
-      </section>
-
-      <section className="notePanel">
-        <strong>当前 MVP 边界：</strong>
-        咪咻会创建一个全屏置顶休息遮罩，并在遮罩内拦截键盘输入。出于系统安全限制，它不会拦截操作系统级快捷键，也不会读取屏幕内容、摄像头或上传任何数据。
-      </section>
-    </main>
-  );
-}
-
-function BreakOverlay() {
-  const params = useMemo(() => new URLSearchParams(window.location.search), []);
-  const duration = Math.max(20, Number(params.get('duration') || 300));
-  const pet = ((params.get('pet') || 'mishoo-cat') as PetId) in PETS ? (params.get('pet') as PetId) : 'mishoo-cat';
-  const strict = params.get('strict') !== '0';
+function BreakOverlay({
+  duration,
+  pet,
+  strict,
+  language,
+  onClose,
+}: {
+  duration: number;
+  pet: PetId;
+  strict: boolean;
+  language: Lang;
+  onClose?: () => void;
+}) {
   const [remaining, setRemaining] = useState(duration);
   const [canFinish, setCanFinish] = useState(false);
-  const [holdProgress, setHoldProgress] = useState(0);
-  const holdTimerRef = useRef<number | null>(null);
+  const t = UI[language];
+  const petMeta = PETS[pet];
 
   useEffect(() => {
     const stopKeys = (event: KeyboardEvent) => {
-      if (strict) {
+      if (strict && !canFinish) {
         event.preventDefault();
         event.stopPropagation();
       }
@@ -283,7 +197,7 @@ function BreakOverlay() {
       window.removeEventListener('keydown', stopKeys, true);
       window.removeEventListener('keyup', stopKeys, true);
     };
-  }, [strict]);
+  }, [canFinish, strict]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -300,73 +214,221 @@ function BreakOverlay() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const finishBreak = () => {
-    void window.mishoo?.closeBreakOverlay();
-  };
-
-  const startEmergencyHold = () => {
-    if (holdTimerRef.current !== null || canFinish) return;
-    let current = 0;
-    holdTimerRef.current = window.setInterval(() => {
-      current += 1;
-      setHoldProgress(current);
-      if (current >= 8) {
-        if (holdTimerRef.current !== null) {
-          window.clearInterval(holdTimerRef.current);
-        }
-        updateStats({ skippedBreaks: readJson<Stats>('mishoo.stats', DEFAULT_STATS).skippedBreaks + 1 });
-        finishBreak();
-      }
-    }, 1000);
-  };
-
-  const stopEmergencyHold = () => {
-    if (holdTimerRef.current !== null) {
-      window.clearInterval(holdTimerRef.current);
-      holdTimerRef.current = null;
+  const close = (skipped = false) => {
+    if (skipped && !canFinish) {
+      const current = readJson<Stats>('mishoo.stats', DEFAULT_STATS);
+      updateStats({ skippedBreaks: current.skippedBreaks + 1 });
     }
-    setHoldProgress(0);
+
+    if (onClose) {
+      onClose();
+      return;
+    }
+
+    void window.mishoo?.closeBreakOverlay();
   };
 
   return (
     <main className="breakOverlay">
+      <button className="closeButton" onClick={() => close(true)} aria-label={t.skip}>
+        <X size={18} /> {t.skip}
+      </button>
       <div className="floatingBlob blobOne" />
       <div className="floatingBlob blobTwo" />
       <section className="breakContent">
         <div className="breakPetStage">
-          <PetIllustration pet={pet} large />
+          <PetPhoto pet={pet} large />
         </div>
-        <p className="breakEyebrow">Pawse Mode</p>
-        <h1>{canFinish ? '休息完成，咪咻把屏幕还给你。' : '咪咻已经挡住屏幕，请你休息一下。'}</h1>
-        <p className="breakMessage">
-          {canFinish
-            ? '如果感觉好一点了，就回到工作；如果还累，可以继续休息。'
-            : '看远处、站起来、喝口水，或者只是闭上眼睛。键盘暂时交给咪咻保管。'}
-        </p>
+        <p className="breakEyebrow">{t.overlayEyebrow}</p>
+        <h1>{canFinish ? t.overlayDone : t.overlayTitle}</h1>
+        <p className="breakMessage">{canFinish ? t.overlayDoneText : t.overlayText}</p>
         <div className="breakTimer">{formatTime(remaining)}</div>
-        {canFinish ? (
-          <button className="primaryButton finishButton" onClick={finishBreak}>回到工作</button>
-        ) : (
-          <button
-            className="emergencyButton"
-            onMouseDown={startEmergencyHold}
-            onMouseUp={stopEmergencyHold}
-            onMouseLeave={stopEmergencyHold}
-          >
-            紧急退出：按住 8 秒 {holdProgress > 0 ? `(${holdProgress}/8)` : ''}
-          </button>
-        )}
+        <p className="photoCredit">{petMeta.credit}</p>
+        {canFinish && <button className="primaryButton finishButton" onClick={() => close(false)}>{t.finish}</button>}
       </section>
     </main>
   );
 }
 
+function ControlPanel() {
+  const [settings, setSettings] = useStoredState<Settings>('mishoo.settings', DEFAULT_SETTINGS);
+  const [stats, setStats] = useStoredState<Stats>('mishoo.stats', DEFAULT_STATS);
+  const [running, setRunning] = useState(false);
+  const [remaining, setRemaining] = useState(settings.workMinutes * 60);
+  const [lastBreak, setLastBreak] = useState<string>(UI[settings.language].waiting);
+  const [browserBreak, setBrowserBreak] = useState<Settings | null>(null);
+  const [fallbackNotice, setFallbackNotice] = useState(false);
+  const t = UI[settings.language];
+
+  useEffect(() => {
+    if (!running) {
+      setRemaining(settings.workMinutes * 60);
+    }
+  }, [settings.workMinutes, running]);
+
+  useEffect(() => {
+    setLastBreak((current) => (current === UI.zh.waiting || current === UI.en.waiting ? t.waiting : current));
+  }, [t.waiting]);
+
+  const triggerBreak = () => {
+    setRunning(false);
+    const durationSec = settings.breakMinutes * 60;
+
+    if (window.mishoo) {
+      void window.mishoo.showBreakOverlay({
+        durationSec,
+        pet: settings.pet,
+        strictMode: settings.strictMode,
+        language: settings.language,
+      });
+      return;
+    }
+
+    setFallbackNotice(true);
+    setBrowserBreak({ ...settings });
+  };
+
+  useEffect(() => {
+    if (!running) return;
+
+    const timer = window.setInterval(() => {
+      setRemaining((current) => {
+        if (current <= 1) {
+          window.clearInterval(timer);
+          triggerBreak();
+          const nextStats = {
+            completedBreaks: stats.completedBreaks + 1,
+            totalBreakMinutes: stats.totalBreakMinutes + settings.breakMinutes,
+          };
+          setStats((currentStats) => ({ ...currentStats, ...nextStats }));
+          setLastBreak(`${t.finished} ${settings.breakMinutes} ${t.minutes}.`);
+          return settings.workMinutes * 60;
+        }
+        return current - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [running, settings, setStats, stats.completedBreaks, stats.totalBreakMinutes, t.finished, t.minutes]);
+
+  const petOptions = Object.entries(PETS) as Array<[PetId, PetMeta]>;
+  const progress = 1 - remaining / (settings.workMinutes * 60);
+
+  if (browserBreak) {
+    return (
+      <BreakOverlay
+        duration={browserBreak.breakMinutes * 60}
+        pet={browserBreak.pet}
+        strict={browserBreak.strictMode}
+        language={browserBreak.language}
+        onClose={() => setBrowserBreak(null)}
+      />
+    );
+  }
+
+  return (
+    <main className="appShell">
+      <section className="heroCard">
+        <div className="heroCopy">
+          <div className="topBar">
+            <div className="brandRow">
+              <div className="brandMark"><PawPrint size={22} /></div>
+              <span>Mishoo / 咪咻</span>
+            </div>
+            <button
+              className="languageButton"
+              onClick={() => setSettings({ ...settings, language: settings.language === 'zh' ? 'en' : 'zh' })}
+            >
+              <Globe2 size={16} /> {settings.language === 'zh' ? 'English' : '中文'}
+            </button>
+          </div>
+          <h1>{t.heroTitle}</h1>
+          <p>{t.heroText}</p>
+          {fallbackNotice && <div className="notice">{t.browserFallback}</div>}
+          <div className="heroActions">
+            <button className="primaryButton" onClick={() => setRunning((value) => !value)}>
+              {running ? <Coffee size={18} /> : <Play size={18} />}
+              {running ? t.pause : t.start}
+            </button>
+            <button className="ghostButton" onClick={triggerBreak}>{t.summon}</button>
+          </div>
+        </div>
+        <div className="heroPetPanel">
+          <PetPhoto pet={settings.pet} large />
+          <div className="petName">{PETS[settings.pet].name[settings.language]}</div>
+          <div className="petHint">{PETS[settings.pet].description[settings.language]}</div>
+        </div>
+      </section>
+
+      <section className="dashboardGrid">
+        <article className="timerCard panel">
+          <div className="panelTitle"><Clock3 size={18} /> {t.workRound}</div>
+          <div className="timeDisplay">{formatTime(remaining)}</div>
+          <div className="progressTrack"><div className="progressFill" style={{ width: `${Math.round(progress * 100)}%` }} /></div>
+          <p>{running ? t.willAppear : t.ready}</p>
+        </article>
+
+        <article className="panel">
+          <div className="panelTitle"><Shield size={18} /> {t.boundary}</div>
+          <label className="field">
+            <span>{t.workMinutes}</span>
+            <input type="number" min="1" max="180" value={settings.workMinutes} onChange={(event) => setSettings({ ...settings, workMinutes: Number(event.target.value) })} />
+          </label>
+          <label className="field">
+            <span>{t.breakMinutes}</span>
+            <input type="number" min="1" max="60" value={settings.breakMinutes} onChange={(event) => setSettings({ ...settings, breakMinutes: Number(event.target.value) })} />
+          </label>
+          <label className="toggleField">
+            <input type="checkbox" checked={settings.strictMode} onChange={(event) => setSettings({ ...settings, strictMode: event.target.checked })} />
+            <span>{t.strict}</span>
+          </label>
+        </article>
+
+        <article className="panel petPickerPanel">
+          <div className="panelTitle"><Sparkles size={18} /> {t.choosePet}</div>
+          <div className="petPicker">
+            {petOptions.map(([id, pet]) => (
+              <button key={id} className={`petOption ${settings.pet === id ? 'selected' : ''}`} onClick={() => setSettings({ ...settings, pet: id })}>
+                <PetPhoto pet={id} />
+                <span>{pet.name[settings.language]}</span>
+              </button>
+            ))}
+          </div>
+        </article>
+
+        <article className="panel statsPanel">
+          <div className="panelTitle"><Heart size={18} /> {t.stats}</div>
+          <div className="statsGrid">
+            <div><strong>{stats.completedBreaks}</strong><span>{t.breaks}</span></div>
+            <div><strong>{stats.totalBreakMinutes}</strong><span>{t.minutes}</span></div>
+            <div><strong>{stats.skippedBreaks}</strong><span>{t.skipped}</span></div>
+          </div>
+          <p>{lastBreak}</p>
+        </article>
+      </section>
+
+      <section className="notePanel"><strong>{t.noteTitle}</strong>{t.note}</section>
+    </main>
+  );
+}
+
 export function App() {
-  const params = new URLSearchParams(window.location.search);
+  const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const mode = params.get('mode');
+  const petParam = params.get('pet') as PetId | null;
+  const langParam = params.get('lang') as Lang | null;
+  const pet = petParam && petParam in PETS ? petParam : 'mishoo-cat';
+  const language = langParam === 'en' ? 'en' : 'zh';
 
   if (mode === 'break') {
-    return <BreakOverlay />;
+    return (
+      <BreakOverlay
+        duration={Math.max(10, Number(params.get('duration') || 300))}
+        pet={pet}
+        strict={params.get('strict') !== '0'}
+        language={language}
+      />
+    );
   }
 
   return <ControlPanel />;

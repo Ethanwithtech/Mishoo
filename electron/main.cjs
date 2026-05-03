@@ -3,7 +3,6 @@ const path = require('node:path');
 
 let mainWindow = null;
 let overlayWindow = null;
-let breakActive = false;
 
 const isDev = !app.isPackaged;
 const devUrl = 'http://127.0.0.1:5173';
@@ -39,10 +38,11 @@ function createMainWindow() {
   });
 }
 
-function showBreakOverlay({ durationSec, pet, strictMode }) {
-  const safeDuration = Math.max(20, Math.min(Number(durationSec) || 300, 60 * 60));
+function showBreakOverlay({ durationSec, pet, strictMode, language }) {
+  const safeDuration = Math.max(10, Math.min(Number(durationSec) || 300, 60 * 60));
   const safePet = encodeURIComponent(String(pet || 'mishoo-cat'));
   const strict = strictMode === false ? '0' : '1';
+  const lang = encodeURIComponent(String(language || 'zh'));
 
   if (overlayWindow && !overlayWindow.isDestroyed()) {
     overlayWindow.focus();
@@ -51,7 +51,6 @@ function showBreakOverlay({ durationSec, pet, strictMode }) {
 
   const primaryDisplay = screen.getPrimaryDisplay();
   const { x, y, width, height } = primaryDisplay.bounds;
-  breakActive = true;
 
   overlayWindow = new BrowserWindow({
     x,
@@ -60,14 +59,13 @@ function showBreakOverlay({ durationSec, pet, strictMode }) {
     height,
     frame: false,
     fullscreen: true,
-    kiosk: true,
     alwaysOnTop: true,
     skipTaskbar: true,
     resizable: false,
     movable: false,
     minimizable: false,
     maximizable: false,
-    closable: false,
+    closable: true,
     focusable: true,
     title: 'Mishoo Break',
     backgroundColor: '#fff3dc',
@@ -80,32 +78,19 @@ function showBreakOverlay({ durationSec, pet, strictMode }) {
 
   overlayWindow.setAlwaysOnTop(true, 'screen-saver');
   overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  overlayWindow.loadURL(rendererUrl(`?mode=break&duration=${safeDuration}&pet=${safePet}&strict=${strict}`));
+  overlayWindow.loadURL(rendererUrl(`?mode=break&duration=${safeDuration}&pet=${safePet}&strict=${strict}&lang=${lang}`));
   overlayWindow.focus();
-
-  overlayWindow.webContents.on('before-input-event', (event) => {
-    if (breakActive) {
-      event.preventDefault();
-    }
-  });
-
-  overlayWindow.on('close', (event) => {
-    if (breakActive) {
-      event.preventDefault();
-      overlayWindow.focus();
-    }
-  });
 
   overlayWindow.on('closed', () => {
     overlayWindow = null;
-    breakActive = false;
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.focus();
+    }
   });
 }
 
 function closeBreakOverlay() {
-  breakActive = false;
   if (overlayWindow && !overlayWindow.isDestroyed()) {
-    overlayWindow.setClosable(true);
     overlayWindow.close();
   }
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -126,15 +111,6 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
-  }
-});
-
-app.on('before-quit', (event) => {
-  if (breakActive) {
-    event.preventDefault();
-    if (overlayWindow && !overlayWindow.isDestroyed()) {
-      overlayWindow.focus();
-    }
   }
 });
 

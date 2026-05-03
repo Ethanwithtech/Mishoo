@@ -6,3 +6,4 @@ npm-debug.log*
 .env.*
 out
 coverage
+.playwright-mcp/
