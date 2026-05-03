@@ -22,6 +22,7 @@ type PetMeta = {
   name: Record<Lang, string>;
   description: Record<Lang, string>;
   image: string;
+  video?: string;
   credit: string;
 };
 
@@ -33,10 +34,11 @@ const PETS: Record<PetId, PetMeta> = {
     credit: 'Photo by Eric Han on Unsplash',
   },
   'cocoa-dog': {
-    name: { zh: '可可小狗', en: 'Cocoa the Dog' },
-    description: { zh: '适合需要一点鼓励的工作日', en: 'A warm companion for long workdays' },
+    name: { zh: '金毛 Cocoa', en: 'Cocoa the Golden Retriever' },
+    description: { zh: '会走到屏幕前躺下的金毛休息搭子', en: 'A golden retriever that walks in and lies down on your screen' },
     image: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=1200&q=85',
-    credit: 'Photo by Jamie Street on Unsplash',
+    video: '/videos/golden-alpha.webm',
+    credit: 'AI-generated green-screen test video, keyed to WebM alpha',
   },
   'snow-rabbit': {
     name: { zh: '雪球兔兔', en: 'Snow the Rabbit' },
@@ -114,7 +116,7 @@ const UI: Record<Lang, Record<string, string>> = {
 const DEFAULT_SETTINGS: Settings = {
   workMinutes: 50,
   breakMinutes: 5,
-  pet: 'mishoo-cat',
+  pet: 'cocoa-dog',
   strictMode: true,
   language: 'zh',
 };
@@ -237,7 +239,18 @@ function BreakOverlay({
       <div className="floatingBlob blobTwo" />
       <section className="breakContent">
         <div className="breakPetStage">
-          <PetPhoto pet={pet} large />
+          {petMeta.video ? (
+            <video
+              className="breakPetVideo"
+              src={petMeta.video}
+              autoPlay
+              muted
+              playsInline
+              preload="auto"
+            />
+          ) : (
+            <PetPhoto pet={pet} large />
+          )}
         </div>
         <p className="breakEyebrow">{t.overlayEyebrow}</p>
         <h1>{canFinish ? t.overlayDone : t.overlayTitle}</h1>

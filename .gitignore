@@ -7,3 +7,5 @@ npm-debug.log*
 out
 coverage
 .playwright-mcp/
+*.mp4
+public/videos/*-preview.png
