@@ -36,6 +36,22 @@ npm run dev
 npm run build
 ```
 
+## 视频抠像
+
+项目内置了基于 `ffmpeg-static` 的视频抠像脚本：
+
+```bash
+npm run video:key -- dog-greenscreen.mp4 --mode chroma --key 00ff00 --similarity 0.25 --blend 0.10
+```
+
+如果剪映导出的是真正带透明通道的 `MOV ProRes 4444`：
+
+```bash
+npm run video:key -- dog-alpha.mov --mode alpha
+```
+
+更多说明见：`docs/video-matting.md`
+
 ## 产品方向
 
 第一阶段验证的问题不是“能不能做 AI 宠物”，而是：当宠物全屏出现并要求休息时，目标用户是否觉得这是帮助而不是打扰。

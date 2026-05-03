@@ -8,4 +8,6 @@ out
 coverage
 .playwright-mcp/
 *.mp4
+/*.mov
+/*.webm
 public/videos/*-preview.png
