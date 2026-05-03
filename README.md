@@ -50,6 +50,14 @@ npm run video:key -- dog-greenscreen.mp4 --mode chroma --key 00ff00 --similarity
 npm run video:key -- dog-alpha.mov --mode alpha
 ```
 
+如果普通绿幕/黑底抠像不够干净，可以使用开源 AI 自动抠像流程：
+
+```bash
+npm run video:ai -- input.mp4
+```
+
+第一次运行会创建本地 Python 虚拟环境 `.mishoo-video-env`，安装 PyTorch CPU 版本和 `backgroundremover`，并下载模型，耗时会比较久。
+
 更多说明见：`docs/video-matting.md`
 
 ## 产品方向

@@ -66,7 +66,28 @@ public/videos/golden-alpha-preview.png
 
 这是最适合当前需求的开源命令行工具，因为它支持图片和视频背景移除，并能输出透明视频。它基于 U2Net / PyTorch，通用物体比人像专用模型更适合尝试宠物素材。
 
-常用命令：
+本项目已经接入包装命令：
+
+```bash
+npm run video:ai -- input.mp4
+```
+
+第一次真实运行会自动创建 `.mishoo-video-env`，安装 PyTorch CPU 版本和 `backgroundremover`，并下载 U2Net 模型。默认输出：
+
+```text
+public/videos/golden-alpha.webm
+public/videos/golden-alpha-preview.png
+```
+
+可选参数：
+
+```bash
+npm run video:ai -- input.mp4 --model u2netp
+npm run video:ai -- input.mp4 --out public/videos/golden-alpha.webm
+npm run video:ai -- input.mp4 --skip-install
+```
+
+也可以直接使用原始命令：
 
 ```bash
 backgroundremover -i input.mp4 -tv --alpha-codec libvpx-vp9 -o output.webm
