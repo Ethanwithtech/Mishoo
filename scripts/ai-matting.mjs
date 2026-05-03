@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import { execFileSync, spawnSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, symlinkSync, unlinkSync } from 'node:fs';
 import ffmpegPath from 'ffmpeg-static';
+import ffprobeStatic from 'ffprobe-static';
 
 const DEFAULTS = {
   out: 'public/videos/golden-alpha.webm',
@@ -11,6 +12,8 @@ const DEFAULTS = {
   model: 'u2net',
   fps: '30',
   crf: '28',
+  workers: '1',
+  gpuBatch: '1',
   install: 'true',
 };
 
@@ -30,6 +33,8 @@ Options:
                      Common values: u2net, u2netp, u2net_human_seg
   --fps <n>          Output fps passed to backgroundremover. Default: ${DEFAULTS.fps}
   --crf <n>          Recompression CRF when normalizing output. Default: ${DEFAULTS.crf}
+  --workers <n>      backgroundremover worker count. Default: ${DEFAULTS.workers}
+  --gpuBatch <n>     backgroundremover GPU batch size. Default: ${DEFAULTS.gpuBatch}
   --skip-install     Do not create venv or install dependencies.
 
 Examples:
@@ -108,6 +113,28 @@ function ensureParent(path) {
   mkdirSync(dirname(resolve(path)), { recursive: true });
 }
 
+function ensureToolBin() {
+  const binDir = resolve('.mishoo-video-bin');
+  mkdirSync(binDir, { recursive: true });
+
+  const links = [
+    { name: 'ffmpeg', target: ffmpegPath },
+    { name: 'ffprobe', target: ffprobeStatic.path },
+  ];
+
+  for (const { name, target } of links) {
+    const linkPath = join(binDir, name);
+    try {
+      if (existsSync(linkPath)) unlinkSync(linkPath);
+      symlinkSync(target, linkPath);
+    } catch {
+      // If symlink is not available, backgroundremover can still use system PATH if installed.
+    }
+  }
+
+  return binDir;
+}
+
 function ensureVenv(options) {
   const venvDir = resolve(options.venv);
   const pythonInVenv = venvPython(venvDir);
@@ -134,12 +161,12 @@ function ensureVenv(options) {
 }
 
 function preview(output, preview) {
-  const size = commandOutput(ffmpegPath, [
+  const size = commandOutput(ffprobeStatic.path, [
     '-v', 'error',
-    '-i', output,
     '-select_streams', 'v:0',
     '-show_entries', 'stream=width,height',
     '-of', 'csv=s=x:p=0',
+    output,
   ]).split('\n')[0] || '1920x1080';
 
   runCommand(ffmpegPath, [
@@ -169,9 +196,10 @@ function run() {
   ensureParent(previewPath);
 
   const { venvDir, backgroundremover } = ensureVenv(options);
+  const toolBin = ensureToolBin();
   const env = {
     ...process.env,
-    PATH: `${dirname(ffmpegPath)}:${process.env.PATH ?? ''}`,
+    PATH: `${toolBin}:${dirname(ffmpegPath)}:${dirname(ffprobeStatic.path)}:${process.env.PATH ?? ''}`,
   };
 
   if (!existsSync(backgroundremover)) {
@@ -188,6 +216,8 @@ function run() {
     '--alpha-codec', 'libvpx-vp9',
     '-m', options.model,
     '-fr', options.fps,
+    '-wn', options.workers,
+    '-gb', options.gpuBatch,
     '-o', output,
   ], { env });
 

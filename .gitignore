@@ -12,4 +12,5 @@ coverage
 /*.webm
 public/videos/*-preview.png
 .mishoo-video-env/
+.mishoo-video-bin/
 .mishoo-video-cache/
