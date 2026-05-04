@@ -13,7 +13,38 @@ Mishoo 是一个面向久坐打工人的桌面休息守护应用。到点后，�
 - 本地休息记录
 - 明显的安全退出按钮，避免开发测试时卡住全屏
 - 浏览器预览降级：如果不在 Electron 中运行，`立即召唤咪咻` 会打开网页内遮罩
+- Chrome Extension MVP：弹窗设置页、后台工作计时、内容脚本注入网页内宠物覆盖层
 - 默认本地优先，不需要账号，不读取屏幕内容，不启用摄像头，不上传数据
+
+## Chrome Extension MVP
+
+当前构建会同时输出 Electron 网页和浏览器插件文件。插件核心文件包括：
+
+```text
+public/manifest.json
+extension/popup.html
+src/extension/popup.tsx
+src/extension/background.ts
+src/extension/content.ts
+```
+
+构建后在 Chrome 中加载：
+
+```bash
+npm run build
+```
+
+然后打开 Chrome：`chrome://extensions` → 开启 Developer mode → Load unpacked → 选择项目的 `dist` 目录。
+
+插件能力：
+
+- popup 中设置工作/休息时长、宠物、语言和 Pawse Mode
+- 点击“立即召唤”会把咪咻注入到当前网页
+- 点击“开始专注计时”后，到点由后台脚本向当前活动网页发送休息提醒
+- 内容脚本在网页最上层创建透明前景覆盖层，播放 `videos/golden-alpha.webm`
+- 网页内容仍在底下可见，左上角显示小倒计时，右上角保留退出按钮
+
+注意：Chrome 内置页面、扩展商店页面和部分受限页面无法注入 content script；请在普通网页中测试。
 
 ## 重要边界
 

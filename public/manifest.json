@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Mishoo / 咪咻",
+  "version": "0.1.0",
+  "description": "A gentle break guardian that brings a real pet overlay onto the webpage you are using.",
+  "action": {
+    "default_title": "Mishoo / 咪咻",
+    "default_popup": "extension/popup.html"
+  },
+  "background": {
+    "service_worker": "assets/mishoo-background.js",
+    "type": "module"
+  },
+  "permissions": ["alarms", "storage", "tabs"],
+  "host_permissions": ["<all_urls>"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["assets/mishoo-content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["videos/golden-alpha.webm"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
