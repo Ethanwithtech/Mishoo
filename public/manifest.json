@@ -22,7 +22,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["videos/golden-alpha.webm"],
+      "resources": ["videos/golden-alpha.webm", "videos/mia-source.webm", "videos/samoyed-source.webm", "videos/pomeranian-source.webm", "videos/lop-rabbit-source.webm"],
       "matches": ["<all_urls>"]
     }
   ]

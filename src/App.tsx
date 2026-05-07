@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Clock3, Coffee, Globe2, Heart, PawPrint, Play, Shield, Sparkles, X } from 'lucide-react';
 
-type PetId = 'mishoo-cat' | 'cocoa-dog' | 'snow-rabbit';
+type PetId = 'mishoo-cat' | 'cocoa-dog' | 'snow-rabbit' | 'pom-puppy' | 'lop-rabbit';
 type Lang = 'zh' | 'en';
 
 type Settings = {
@@ -23,28 +23,51 @@ type PetMeta = {
   description: Record<Lang, string>;
   image: string;
   video?: string;
+  /** 进场动作播放完、动物已经躺好开始休息的时间点（秒）。从这里开始 loop。 */
+  restLoopStart?: number;
   credit: string;
 };
 
 const PETS: Record<PetId, PetMeta> = {
   'mishoo-cat': {
     name: { zh: '真实小猫 Mia', en: 'Mia the Real Cat' },
-    description: { zh: '一只会认真挡住屏幕的小猫', en: 'A real cat who gently blocks your screen' },
+    description: { zh: '一只会认真挡住屏幕的三花小猫', en: 'A real calico cat who gently blocks your screen' },
     image: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=1200&q=85',
-    credit: 'Photo by Eric Han on Unsplash',
+    video: '/videos/mia-source.webm',
+    restLoopStart: 5,
+    credit: 'AI-generated green-screen test video, chroma-keyed in browser',
   },
   'cocoa-dog': {
     name: { zh: '金毛 Cocoa', en: 'Cocoa the Golden Retriever' },
     description: { zh: '会走到屏幕前躺下的金毛休息搭子', en: 'A golden retriever that walks in and lies down on your screen' },
     image: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=1200&q=85',
     video: '/videos/golden-alpha.webm',
+    restLoopStart: 4,
     credit: 'AI-generated green-screen test video, keyed to WebM alpha',
   },
   'snow-rabbit': {
-    name: { zh: '雪球兔兔', en: 'Snow the Rabbit' },
-    description: { zh: '安静陪你从屏幕前离开一下', en: 'A calm pet that helps you step away' },
-    image: 'https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?auto=format&fit=crop&w=1200&q=85',
-    credit: 'Photo from Unsplash',
+    name: { zh: '萨摩耶 Snow', en: 'Snow the Samoyed' },
+    description: { zh: '会趴在网页前的白色萨摩耶', en: 'A fluffy Samoyed that rests in front of your webpage' },
+    image: 'https://images.unsplash.com/photo-1588943211346-0908a1fb0b01?auto=format&fit=crop&w=1200&q=85',
+    video: '/videos/samoyed-source.webm',
+    restLoopStart: 1,
+    credit: 'AI-generated green-screen test video, chroma-keyed in browser',
+  },
+  'pom-puppy': {
+    name: { zh: '博美 Mochi', en: 'Mochi the Pomeranian' },
+    description: { zh: '小小一团趴在网页前的白色博美', en: 'A tiny white Pomeranian puppy resting in front of your webpage' },
+    image: 'https://images.unsplash.com/photo-1568572933382-74d440642117?auto=format&fit=crop&w=1200&q=85',
+    video: '/videos/pomeranian-source.webm',
+    restLoopStart: 4,
+    credit: 'AI-generated green-screen test video, chroma-keyed in browser',
+  },
+  'lop-rabbit': {
+    name: { zh: '垂耳兔 Mocha', en: 'Mocha the Lop Rabbit' },
+    description: { zh: '安静趴在网页前的垂耳兔', en: 'A calm lop-eared rabbit resting in front of your webpage' },
+    image: 'https://images.unsplash.com/photo-1517783999520-f068d7431a60?auto=format&fit=crop&w=1200&q=85',
+    video: '/videos/lop-rabbit-source.webm',
+    restLoopStart: 4,
+    credit: 'AI-generated green-screen test video, chroma-keyed in browser',
   },
 };
 
@@ -167,6 +190,131 @@ function PetPhoto({ pet, large = false }: { pet: PetId; large?: boolean }) {
   );
 }
 
+function ChromaKeyPet({ src, restLoopStart }: { src: string; restLoopStart?: number }) {
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return;
+
+    let rafId = 0;
+    let running = true;
+    let hasFinishedIntro = false;
+
+    const setupCanvas = () => {
+      if (!video.videoWidth || !video.videoHeight) return;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+    };
+
+    const draw = () => {
+      if (!running) return;
+      if (video.readyState >= 2 && video.videoWidth) {
+        if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+          setupCanvas();
+        }
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = frame.data;
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          // 绿幕判定：绿色远强于红蓝 → 抠掉
+          // 2G - R - B > threshold 就是绿幕
+          const greenness = 2 * g - r - b;
+          if (greenness > 50 && g > 50) {
+            data[i + 3] = 0; // 绿幕→完全透明
+          } else {
+            data[i + 3] = 255; // 其他→完全不透明（金毛实心）
+            // 轻微 despill：降低残留的绿色
+            if (greenness > 0) {
+              data[i + 1] = Math.max(0, g - greenness * 0.5);
+            }
+          }
+        }
+        ctx.putImageData(frame, 0, 0);
+      }
+      rafId = requestAnimationFrame(draw);
+    };
+
+    const onLoaded = () => {
+      setupCanvas();
+      void video.play().catch(() => undefined);
+      draw();
+    };
+
+    // 进场动作只播一次，之后只 loop 已经躺好的尾部片段
+    const onEnded = () => {
+      const start = typeof restLoopStart === 'number' ? restLoopStart : 0;
+      hasFinishedIntro = true;
+      try {
+        video.currentTime = Math.max(0, Math.min(start, (video.duration || 0) - 0.05));
+      } catch {
+        // 某些浏览器在 ended 后 set currentTime 可能抛错，忽略
+      }
+      void video.play().catch(() => undefined);
+    };
+
+    // 兜底：有的视频不会触发 ended（loop 时不会触发），用 timeupdate 在接近末尾时手动跳转
+    const onTimeUpdate = () => {
+      const start = typeof restLoopStart === 'number' ? restLoopStart : 0;
+      const dur = video.duration;
+      if (!Number.isFinite(dur) || dur <= 0) return;
+      if (hasFinishedIntro) {
+        if (video.currentTime >= dur - 0.1) {
+          try {
+            video.currentTime = start;
+          } catch {
+            /* noop */
+          }
+        }
+      } else if (video.currentTime >= dur - 0.1) {
+        hasFinishedIntro = true;
+        try {
+          video.currentTime = start;
+        } catch {
+          /* noop */
+        }
+      }
+    };
+
+    video.addEventListener('loadeddata', onLoaded);
+    video.addEventListener('ended', onEnded);
+    video.addEventListener('timeupdate', onTimeUpdate);
+    if (video.readyState >= 2) onLoaded();
+
+    return () => {
+      running = false;
+      cancelAnimationFrame(rafId);
+      video.removeEventListener('loadeddata', onLoaded);
+      video.removeEventListener('ended', onEnded);
+      video.removeEventListener('timeupdate', onTimeUpdate);
+    };
+  }, [src, restLoopStart]);
+
+  return (
+    <>
+      <video
+        ref={videoRef}
+        className="mishooPetSourceVideo"
+        src={src}
+        autoPlay
+        muted
+        playsInline
+        preload="auto"
+        crossOrigin="anonymous"
+      />
+      <canvas ref={canvasRef} className="breakPetVideoFull" />
+    </>
+  );
+}
+
 function BreakOverlay({
   duration,
   pet,
@@ -232,17 +380,7 @@ function BreakOverlay({
 
   return (
     <main className={`breakOverlay ${petMeta.video ? 'videoOverlay' : ''}`}>
-      {petMeta.video && (
-        <video
-          className="breakPetVideoFull"
-          src={petMeta.video}
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-        />
-      )}
+      {petMeta.video && <ChromaKeyPet src={petMeta.video} restLoopStart={petMeta.restLoopStart} />}
       <button className="closeButton" onClick={() => close(true)} aria-label={t.skip}>
         <X size={18} /> {t.skip}
       </button>

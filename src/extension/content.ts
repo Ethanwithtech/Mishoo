@@ -1,4 +1,4 @@
-type PetId = 'mishoo-cat' | 'cocoa-dog' | 'snow-rabbit';
+type PetId = 'mishoo-cat' | 'cocoa-dog' | 'snow-rabbit' | 'pom-puppy' | 'lop-rabbit';
 type Lang = 'zh' | 'en';
 
 type OverlayPayload = {
@@ -19,8 +19,16 @@ const PETS: Record<PetId, { name: Record<Lang, string>; image?: string; video?: 
     video: 'videos/golden-alpha.webm',
   },
   'snow-rabbit': {
-    name: { zh: '雪球兔兔', en: 'Snow the Rabbit' },
-    image: 'https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?auto=format&fit=crop&w=1200&q=85',
+    name: { zh: '萨摩耶 Snow', en: 'Snow the Samoyed' },
+    video: 'videos/samoyed-source.webm',
+  },
+  'pom-puppy': {
+    name: { zh: '博美 Mochi', en: 'Mochi the Pomeranian' },
+    video: 'videos/pomeranian-source.webm',
+  },
+  'lop-rabbit': {
+    name: { zh: '垂耳兔 Mocha', en: 'Mocha the Lop Rabbit' },
+    video: 'videos/lop-rabbit-source.webm',
   },
 };
 
@@ -50,7 +58,7 @@ function formatTime(totalSeconds: number) {
 }
 
 function getSafePet(value: unknown): PetId {
-  return value === 'mishoo-cat' || value === 'snow-rabbit' || value === 'cocoa-dog' ? value : 'cocoa-dog';
+  return value === 'mishoo-cat' || value === 'snow-rabbit' || value === 'cocoa-dog' || value === 'pom-puppy' || value === 'lop-rabbit' ? value : 'cocoa-dog';
 }
 
 function getSafeLanguage(value: unknown): Lang {

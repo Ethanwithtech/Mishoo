@@ -1,4 +1,4 @@
-export type PetId = 'mishoo-cat' | 'cocoa-dog' | 'snow-rabbit';
+export type PetId = 'mishoo-cat' | 'cocoa-dog' | 'snow-rabbit' | 'pom-puppy' | 'lop-rabbit';
 export type Lang = 'zh' | 'en';
 
 export type ExtensionSettings = {
@@ -107,7 +107,9 @@ export const UI = {
 export const PET_LABELS: Record<PetId, Record<Lang, string>> = {
   'mishoo-cat': { zh: '真实小猫 Mia', en: 'Mia the Real Cat' },
   'cocoa-dog': { zh: '金毛 Cocoa', en: 'Cocoa the Golden Retriever' },
-  'snow-rabbit': { zh: '雪球兔兔', en: 'Snow the Rabbit' },
+  'snow-rabbit': { zh: '萨摩耶 Snow', en: 'Snow the Samoyed' },
+  'pom-puppy': { zh: '博美 Mochi', en: 'Mochi the Pomeranian' },
+  'lop-rabbit': { zh: '垂耳兔 Mocha', en: 'Mocha the Lop Rabbit' },
 };
 
 export function formatTime(totalSeconds: number) {
