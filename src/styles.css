@@ -65,8 +65,8 @@ body.desktopPetDocument {
   pointer-events: none;
 }
 
-.desktopPetVisual.facing-right { transform: scaleX(-1); }
-.desktopPetVisual.facing-left { transform: scaleX(1); }
+.desktopPetVisual.facing-right { transform: scaleX(1); }
+.desktopPetVisual.facing-left { transform: scaleX(-1); }
 
 .desktopPetMotion {
   display: flex;

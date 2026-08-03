@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Check, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 
 type TimerPhase = 'work' | 'shortBreak' | 'longBreak';
-type Interaction = 'jump' | 'squash' | 'shake';
+type PetMotion = 'idle' | 'walk' | 'jump' | 'rest';
 
 type Todo = {
   id: string;
@@ -29,6 +29,14 @@ const CHAT_LINES = [
   '今天也有好好照顾自己吗？',
   '做完这一轮就休息！',
 ];
+
+const GOLDEN_PUPPY_ASSETS: Record<PetMotion | 'poster', string> = {
+  poster: '/desktop-pet/golden-puppy/poster.webp',
+  idle: '/desktop-pet/golden-puppy/idle.webm',
+  walk: '/desktop-pet/golden-puppy/walk.webm',
+  jump: '/desktop-pet/golden-puppy/jump.webm',
+  rest: '/desktop-pet/golden-puppy/rest.webm',
+};
 
 function readStored<T>(key: string, fallback: T): T {
   try {
@@ -76,7 +84,7 @@ export function DesktopPet() {
   const [phase, setPhase] = useState<TimerPhase>('work');
   const [remaining, setRemaining] = useState(WORK_SECONDS);
   const [completedWorkRounds, setCompletedWorkRounds] = useState(0);
-  const [interaction, setInteraction] = useState<Interaction>('jump');
+  const [activeReaction, setActiveReaction] = useState<PetMotion | null>(null);
   const [animationKey, setAnimationKey] = useState(0);
   const [bubble, setBubble] = useState<string | null>('右键打开咪咻菜单');
   const [reminderKind, setReminderKind] = useState<'water' | 'posture' | null>(null);
@@ -187,9 +195,7 @@ export function DesktopPet() {
   }, [todoOpen]);
 
   const interact = () => {
-    const interactions: Interaction[] = ['jump', 'squash', 'shake'];
-    const next = interactions[(interactions.indexOf(interaction) + 1) % interactions.length];
-    setInteraction(next);
+    setActiveReaction('jump');
     setAnimationKey((value) => value + 1);
     const nextRunning = !running;
     setRunning(nextRunning);
@@ -240,6 +246,18 @@ export function DesktopPet() {
     setTodoText('');
   };
 
+  const baseMotion: PetMotion = phase !== 'work'
+    ? 'rest'
+    : patrol.mode === 'walking'
+      ? 'walk'
+      : 'idle';
+  const currentMotion = activeReaction ?? baseMotion;
+  const petVideoClassName = [
+    'desktopPetImage',
+    'desktopPetVideo',
+    currentMotion === 'jump' ? 'interaction-jump' : '',
+  ].filter(Boolean).join(' ');
+
   return (
     <main
       className="desktopPetRoot"
@@ -273,23 +291,28 @@ export function DesktopPet() {
         <div className={`desktopPetVisual facing-${patrol.direction === 1 ? 'right' : 'left'}`}>
           <div className={`desktopPetMotion patrol-${patrol.mode}`}>
             <video
-              key={animationKey}
-              className={`desktopPetImage desktopPetVideo interaction-${interaction}`}
-              src={asset('/desktop-pet/idle.webm')}
-              poster={asset('/desktop-pet/framefront.webp')}
-              aria-label="Mishoo 熊猫桌宠"
+              key={`${currentMotion}-${animationKey}`}
+              className={petVideoClassName}
+              src={asset(GOLDEN_PUPPY_ASSETS[currentMotion])}
+              poster={asset(GOLDEN_PUPPY_ASSETS.poster)}
+              aria-label="Mishoo 幼年金毛桌宠"
               autoPlay
+              loop={currentMotion !== 'jump'}
               muted
               playsInline
               preload="auto"
               draggable={false}
               onLoadedMetadata={(event) => {
-                event.currentTarget.currentTime = 6;
                 void event.currentTarget.play().catch(() => undefined);
               }}
               onTimeUpdate={(event) => {
                 const video = event.currentTarget;
-                if (video.duration && video.currentTime >= video.duration - 0.08) video.currentTime = 6;
+                if (currentMotion === 'jump' && video.currentTime >= 2.4) {
+                  setActiveReaction(null);
+                }
+              }}
+              onEnded={() => {
+                if (currentMotion === 'jump') setActiveReaction(null);
               }}
             />
           </div>

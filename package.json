@@ -10,6 +10,7 @@
     "build:web": "tsc --noEmit && vite build --base=/mishoo/ --outDir dist-web",
     "start": "electron .",
     "desktop:frame": "python3 scripts/prepare-desktop-frame.py",
+    "desktop:golden": "python3 scripts/prepare-golden-puppy-assets.py",
     "pets:covers": "python3 scripts/generate-pet-covers.py",
     "direction:audit": "node scripts/build-direction-sprite.mjs",
     "dist:win": "npm run desktop:frame && npm run build && electron-builder --win portable --x64",
