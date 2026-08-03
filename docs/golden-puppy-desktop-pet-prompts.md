@@ -2,7 +2,7 @@
 
 更新日期：2026-08-03
 
-这份文件只保留当前阶段真正要生成的素材：1 张参考图 + 5 条视频。先不要生成完整动作库。第一版桌宠重点是跑通“透明桌宠、自动巡逻、点击反馈、休息状态”，其余动作先用程序里的窗口移动、CSS 动效、气泡和提示音解决。
+这份文件只保留当前阶段真正要生成的素材：1 张参考图 + 6 条视频。先不要生成完整动作库。第一版桌宠重点是跑通“透明桌宠、自动巡逻、点击反馈、休息状态、鼠标拖动反馈”，其余动作先用程序里的窗口移动、CSS 动效、气泡和提示音解决。
 
 ## 生成顺序
 
@@ -12,6 +12,7 @@
 4. `golden-puppy-walk-left.webm`：向左巡逻。
 5. `golden-puppy-click-jump.webm`：左键点击反馈。
 6. `golden-puppy-rest-loop.webm`：番茄钟休息、喝水提醒、久坐提醒时复用。
+7. `golden-puppy-drag-hold-loop.webm`：用户按住鼠标拖动桌宠时播放。
 
 ## 通用要求
 
@@ -92,6 +93,20 @@ Prompt：
 
 > Use the uploaded photorealistic real juvenile golden retriever reference image as the only visual source. The puppy must remain a real young golden retriever, not a cartoon, toy, plush, doll, 3D mascot, or illustrated character. Preserve the puppy exactly 1:1: same face, eyes, ears, fur color, body shape, proportions, tail, paws, lighting, and style. The puppy lies down facing front with its head resting on its front paws and performs a seamless calm resting loop: gentle breathing, tiny blink, and slight ear movement. The first and last frames must match in pose and velocity. No standing up, no walking, no rolling, no second action. Locked camera, no zoom, no shake. Perfectly uniform solid blue background #0047FF. No text, subtitle, logo, watermark, UI, border, or extra object. One puppy only, 3-4 seconds, 24fps, 1024x1024.
 
+## 06 鼠标抓住拖动循环
+
+文件建议：`golden-puppy-drag-hold-loop.webm`
+
+用途：用户按住鼠标左键拖动桌宠期间播放。视频只表现“被轻轻提起并悬空”的身体反应，屏幕上的实际位移由程序跟随鼠标完成。
+
+Prompt：
+
+> Use the uploaded photorealistic real juvenile golden retriever reference image as the only visual source. The puppy must remain a real young golden retriever, not a cartoon, toy, plush, doll, 3D mascot, or illustrated character. Preserve the puppy exactly 1:1: same face, eyes, ears, fur color, body shape, proportions, tail, paws, lighting, and style. Show the puppy gently lifted and safely supported beneath the upper chest as if held by an invisible hand during desktop drag interaction. Its body hangs naturally in a relaxed near-vertical pose, the front paws and hind legs dangle softly, the tail hangs naturally, and the puppy makes a very small gentle side-to-side sway with subtle breathing and one calm blink. The expression is comfortable, trusting, and slightly curious, never frightened or distressed. Keep the puppy centered at a fixed position and fixed scale; do not move it across the canvas because the software controls cursor-following movement. Create a seamless loop with matching first and last frame pose and velocity. No pickup transition, no release transition, no walking, no jumping, no struggling, no kicking, no second action. No visible human hand, arm, mouse cursor, string, hook, harness, collar, or support object. Locked camera, no zoom, no shake. Perfectly uniform solid blue background #0047FF. No floor, shadow, or reflection. No text, subtitle, logo, watermark, UI, border, or extra object. One puppy only, 2-3 seconds, 24fps, 1024x1024.
+
+本动作额外 Negative Prompt：
+
+> visible hand, human arm, fingers, mouse cursor, pointer icon, leash, rope, string, hook, collar, harness, grabbing fur, pulling ears, lifting by neck, lifting by scruff, choking, pain, fear, distress, struggling, kicking, falling, body deformation, stretched neck, broken anatomy, duplicated paws, cropped legs, camera follow, subject translation.
+
 ## 暂时不做
 
 第一版暂时不生成这些动作：
@@ -102,7 +117,6 @@ Prompt：
 - 专注开始表情
 - 喝水提醒专属动作
 - 久坐提醒专属动作
-- 拖拽悬空
 - 浏览器四边动作
 
 这些动作等 v1 桌宠替换成幼年金毛、抠像稳定、打包跑通后再补。

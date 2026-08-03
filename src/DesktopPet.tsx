@@ -87,7 +87,8 @@ export function DesktopPet() {
   const [completedWorkRounds, setCompletedWorkRounds] = useState(0);
   const [activeReaction, setActiveReaction] = useState<PetMotion | null>(null);
   const [animationKey, setAnimationKey] = useState(0);
-  const [bubble, setBubble] = useState<string | null>('Right-click for Mishoo settings');
+  const [bubble, setBubble] = useState<string | null>(null);
+  const [controlsRevealed, setControlsRevealed] = useState(false);
   const [reminderKind, setReminderKind] = useState<'water' | 'posture' | null>(null);
   const [todos, setTodos] = useState<Todo[]>(() => readStored('mishoo.todos', []));
   const [todoOpen, setTodoOpen] = useState(false);
@@ -96,6 +97,7 @@ export function DesktopPet() {
   const [patrol, setPatrol] = useState<{ direction: -1 | 1; mode: 'walking' | 'idle' }>({ direction: -1, mode: 'walking' });
   const drag = useRef({ active: false, moved: false, startX: 0, startY: 0 });
   const bubbleTimer = useRef<number | null>(null);
+  const controlsTimer = useRef<number | null>(null);
 
   useEffect(() => {
     document.documentElement.classList.add('desktopPetDocument');
@@ -126,6 +128,12 @@ export function DesktopPet() {
       setBubble(null);
       setReminderKind(null);
     }, timeout);
+  };
+
+  const revealControls = (timeout = 4200) => {
+    setControlsRevealed(true);
+    if (controlsTimer.current) window.clearTimeout(controlsTimer.current);
+    controlsTimer.current = window.setTimeout(() => setControlsRevealed(false), timeout);
   };
 
   const toggleTimer = () => {
@@ -211,6 +219,7 @@ export function DesktopPet() {
       cleanupPatrol?.();
       cleanupActivityMode?.();
       if (bubbleTimer.current) window.clearTimeout(bubbleTimer.current);
+      if (controlsTimer.current) window.clearTimeout(controlsTimer.current);
     };
   });
 
@@ -222,10 +231,9 @@ export function DesktopPet() {
   const interact = () => {
     setActiveReaction('jump');
     setAnimationKey((value) => value + 1);
-    const nextRunning = !running;
-    setRunning(nextRunning);
+    revealControls();
     const chat = CHAT_LINES[Math.floor(Math.random() * CHAT_LINES.length)];
-    showBubble(`${chat} ${nextRunning ? 'Focus timer started!' : 'Timer paused. Time to rest.'}`);
+    showBubble(chat);
   };
 
   const snoozeReminder = () => {
@@ -285,7 +293,7 @@ export function DesktopPet() {
 
   return (
     <main
-      className="desktopPetRoot"
+      className={`desktopPetRoot ${controlsRevealed ? 'petControlsRevealed' : ''}`}
       onContextMenu={(event) => {
         event.preventDefault();
         void window.mishoo?.showPetMenu({ running, phase, remaining, activityMode });
@@ -319,6 +327,7 @@ export function DesktopPet() {
             onPointerDown={(event) => event.stopPropagation()}
             onClick={(event) => {
               event.stopPropagation();
+              revealControls();
               toggleTimer();
             }}
           >

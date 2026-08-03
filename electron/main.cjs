@@ -352,9 +352,15 @@ ipcMain.handle('pet:drag-move', (_event, point) => {
   if (!petDrag || !petWindow || petWindow.isDestroyed()) return;
   const pointerX = Number(point?.screenX);
   const pointerY = Number(point?.screenY);
-  if (!Number.isFinite(pointerX) || !Number.isFinite(pointerY)) return;
-  const x = Math.round(petDrag.windowX + (pointerX - petDrag.pointerX));
-  const y = Math.round(petDrag.windowY + (pointerY - petDrag.pointerY));
+  if (!Number.isFinite(pointerX) || !Number.isFinite(pointerY) || Math.abs(pointerX) > 100000 || Math.abs(pointerY) > 100000) return;
+  const displays = screen.getAllDisplays();
+  const bounds = petWindow.getBounds();
+  const minX = Math.min(...displays.map((display) => display.workArea.x));
+  const minY = Math.min(...displays.map((display) => display.workArea.y));
+  const maxX = Math.max(...displays.map((display) => display.workArea.x + display.workArea.width)) - bounds.width;
+  const maxY = Math.max(...displays.map((display) => display.workArea.y + display.workArea.height)) - bounds.height;
+  const x = Math.max(minX, Math.min(maxX, Math.round(petDrag.windowX + (pointerX - petDrag.pointerX))));
+  const y = Math.max(minY, Math.min(maxY, Math.round(petDrag.windowY + (pointerY - petDrag.pointerY))));
   petWindow.setPosition(x, y, false);
 });
 
