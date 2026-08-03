@@ -9,7 +9,8 @@ let petScale = 1;
 let petAlwaysOnTop = true;
 let petDrag = null;
 let petPatrolTimer = null;
-let petPatrolPaused = false;
+let petPatrolPaused = true;
+let petMenuOpen = false;
 let petPatrolState = {
   direction: -1,
   mode: 'walking',
@@ -49,7 +50,7 @@ function startPetPatrol() {
     const now = Date.now();
     const deltaSeconds = Math.min(0.2, (now - petPatrolState.lastTickAt) / 1000);
     petPatrolState.lastTickAt = now;
-    if (!petWindow || petWindow.isDestroyed() || !petWindow.isVisible() || petDrag || petPatrolPaused) return;
+    if (!petWindow || petWindow.isDestroyed() || !petWindow.isVisible() || petDrag || petPatrolPaused || petMenuOpen) return;
 
     if (now >= petPatrolState.nextChangeAt) {
       setPetPatrolMode(petPatrolState.mode === 'walking' ? 'idle' : 'walking', now);
@@ -194,18 +195,35 @@ function resizePetWindow(nextScale) {
 
 function showPetMenu(state = {}) {
   if (!petWindow || petWindow.isDestroyed()) return;
-  petPatrolPaused = true;
-  const phaseLabel = state.phase === 'work' ? '专注' : state.phase === 'longBreak' ? '长休息' : '短休息';
+  petMenuOpen = true;
+  const phaseLabel = state.phase === 'work' ? 'focus' : state.phase === 'longBreak' ? 'long break' : 'break';
   const menu = Menu.buildFromTemplate([
     {
-      label: state.running ? `暂停${phaseLabel}计时` : `开始${phaseLabel}计时`,
+      label: state.running ? `Pause ${phaseLabel} timer & rest` : `Start ${phaseLabel} timer`,
       click: () => petWindow?.webContents.send('pet:timer-toggle'),
     },
-    { label: '设置', click: () => createMainWindow() },
-    { label: '待办', click: () => petWindow?.webContents.send('pet:show-todos') },
+    {
+      label: 'Motion during focus',
+      submenu: [
+        {
+          label: 'Calm rest (recommended)',
+          type: 'radio',
+          checked: state.activityMode !== 'patrol',
+          click: () => petWindow?.webContents.send('pet:activity-mode', 'calm'),
+        },
+        {
+          label: 'Gentle patrol',
+          type: 'radio',
+          checked: state.activityMode === 'patrol',
+          click: () => petWindow?.webContents.send('pet:activity-mode', 'patrol'),
+        },
+      ],
+    },
+    { label: 'Settings', click: () => createMainWindow() },
+    { label: 'To-do list', click: () => petWindow?.webContents.send('pet:show-todos') },
     { type: 'separator' },
     {
-      label: '调整大小',
+      label: 'Size',
       submenu: [0.8, 1, 1.25, 1.5].map((scale) => ({
         label: `${Math.round(scale * 100)}%`,
         type: 'radio',
@@ -214,7 +232,7 @@ function showPetMenu(state = {}) {
       })),
     },
     {
-      label: '始终置顶',
+      label: 'Always on top',
       type: 'checkbox',
       checked: petAlwaysOnTop,
       click: (item) => {
@@ -223,9 +241,9 @@ function showPetMenu(state = {}) {
       },
     },
     { type: 'separator' },
-    { label: '退出咪咻', role: 'quit' },
+    { label: 'Quit Mishoo', role: 'quit' },
   ]);
-  menu.popup({ window: petWindow, callback: () => { petPatrolPaused = false; } });
+  menu.popup({ window: petWindow, callback: () => { petMenuOpen = false; } });
 }
 
 function showBreakOverlay({ durationSec, pet, strictMode, language }) {
@@ -332,8 +350,11 @@ ipcMain.handle('pet:drag-start', (_event, point) => {
 
 ipcMain.handle('pet:drag-move', (_event, point) => {
   if (!petDrag || !petWindow || petWindow.isDestroyed()) return;
-  const x = Math.round(petDrag.windowX + (Number(point?.screenX) - petDrag.pointerX));
-  const y = Math.round(petDrag.windowY + (Number(point?.screenY) - petDrag.pointerY));
+  const pointerX = Number(point?.screenX);
+  const pointerY = Number(point?.screenY);
+  if (!Number.isFinite(pointerX) || !Number.isFinite(pointerY)) return;
+  const x = Math.round(petDrag.windowX + (pointerX - petDrag.pointerX));
+  const y = Math.round(petDrag.windowY + (pointerY - petDrag.pointerY));
   petWindow.setPosition(x, y, false);
 });
 

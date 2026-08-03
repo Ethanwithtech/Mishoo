@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Check, Plus, RotateCcw, Trash2, X } from 'lucide-react';
+import { Check, Pause, Play, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 
 type TimerPhase = 'work' | 'shortBreak' | 'longBreak';
 type PetMotion = 'idle' | 'walk' | 'jump' | 'rest';
+type PetActivityMode = 'calm' | 'patrol';
 
 type Todo = {
   id: string;
@@ -23,11 +24,11 @@ const WATER_INTERVAL = 60 * 60 * 1000;
 const POSTURE_INTERVAL = 45 * 60 * 1000;
 
 const CHAT_LINES = [
-  '先认真一下，再一起摸鱼。',
-  '肩膀放松，眼睛眨一眨。',
-  '咪咻正在监督你的坐姿。',
-  '今天也有好好照顾自己吗？',
-  '做完这一轮就休息！',
+  'One focused step at a time.',
+  'Drop your shoulders and blink.',
+  'Mishoo is watching your posture.',
+  'Have you been kind to yourself today?',
+  'Finish this round, then we rest!',
 ];
 
 const GOLDEN_PUPPY_ASSETS: Record<PetMotion | 'poster', string> = {
@@ -86,11 +87,12 @@ export function DesktopPet() {
   const [completedWorkRounds, setCompletedWorkRounds] = useState(0);
   const [activeReaction, setActiveReaction] = useState<PetMotion | null>(null);
   const [animationKey, setAnimationKey] = useState(0);
-  const [bubble, setBubble] = useState<string | null>('右键打开咪咻菜单');
+  const [bubble, setBubble] = useState<string | null>('Right-click for Mishoo settings');
   const [reminderKind, setReminderKind] = useState<'water' | 'posture' | null>(null);
   const [todos, setTodos] = useState<Todo[]>(() => readStored('mishoo.todos', []));
   const [todoOpen, setTodoOpen] = useState(false);
   const [todoText, setTodoText] = useState('');
+  const [activityMode, setActivityMode] = useState<PetActivityMode>(() => readStored<{ petActivity?: PetActivityMode }>('mishoo.settings', {}).petActivity ?? 'calm');
   const [patrol, setPatrol] = useState<{ direction: -1 | 1; mode: 'walking' | 'idle' }>({ direction: -1, mode: 'walking' });
   const drag = useRef({ active: false, moved: false, startX: 0, startY: 0 });
   const bubbleTimer = useRef<number | null>(null);
@@ -98,7 +100,20 @@ export function DesktopPet() {
   useEffect(() => {
     document.documentElement.classList.add('desktopPetDocument');
     document.body.classList.add('desktopPetDocument');
+    const syncSettings = (event: StorageEvent) => {
+      if (event.key !== 'mishoo.settings' || !event.newValue) return;
+      try {
+        const settings = JSON.parse(event.newValue) as { petActivity?: PetActivityMode };
+        if (settings.petActivity === 'calm' || settings.petActivity === 'patrol') {
+          setActivityMode(settings.petActivity);
+        }
+      } catch {
+        // Keep the current mode if another window writes malformed settings.
+      }
+    };
+    window.addEventListener('storage', syncSettings);
     return () => {
+      window.removeEventListener('storage', syncSettings);
       document.documentElement.classList.remove('desktopPetDocument');
       document.body.classList.remove('desktopPetDocument');
     };
@@ -115,9 +130,16 @@ export function DesktopPet() {
 
   const toggleTimer = () => {
     setRunning((current) => {
-      showBubble(current ? '本轮已暂停，慢慢来。' : phase === 'work' ? '专注计时开始！' : '休息计时开始！');
+      showBubble(current ? 'Timer paused. Mishoo is resting.' : phase === 'work' ? 'Focus timer started!' : 'Break timer started!');
       return !current;
     });
+  };
+
+  const saveActivityMode = (mode: PetActivityMode) => {
+    setActivityMode(mode);
+    const settings = readStored<Record<string, unknown>>('mishoo.settings', {});
+    localStorage.setItem('mishoo.settings', JSON.stringify({ ...settings, petActivity: mode }));
+    showBubble(mode === 'calm' ? 'Calm mode on. Mishoo will rest quietly.' : 'Gentle patrol is on during focus time.');
   };
 
   useEffect(() => {
@@ -136,12 +158,12 @@ export function DesktopPet() {
           const nextPhase: TimerPhase = nextRounds % 4 === 0 ? 'longBreak' : 'shortBreak';
           setCompletedWorkRounds(nextRounds);
           setPhase(nextPhase);
-          showBubble(nextPhase === 'longBreak' ? '四轮完成，去好好休息一下！' : '这一轮完成，起来走走吧！', 8000);
+          showBubble(nextPhase === 'longBreak' ? 'Four rounds done. Take a proper break!' : 'Round complete. Time to stand and stretch!', 8000);
           return phaseDuration(nextPhase);
         }
 
         setPhase('work');
-        showBubble('休息结束，准备好再继续。', 6500);
+        showBubble('Break complete. Continue when you feel ready.', 6500);
         return WORK_SECONDS;
       });
     }, 1000);
@@ -162,12 +184,12 @@ export function DesktopPet() {
       if (currentTime >= current.nextWaterAt) {
         current.nextWaterAt = currentTime + WATER_INTERVAL;
         setReminderKind('water');
-        showBubble('喝水时间到啦！', 12000);
+        showBubble('Time for some water!', 12000);
         playReminderTone();
       } else if (currentTime >= current.nextPostureAt) {
         current.nextPostureAt = currentTime + POSTURE_INTERVAL;
         setReminderKind('posture');
-        showBubble('坐了 45 分钟，站起来伸伸腰吧！', 12000);
+        showBubble('You have been sitting for 45 minutes. Stand and stretch!', 12000);
         playReminderTone();
       }
       localStorage.setItem('mishoo.reminders', JSON.stringify(current));
@@ -182,17 +204,20 @@ export function DesktopPet() {
     const cleanupTimer = window.mishoo?.onPetTimerToggle(toggleTimer);
     const cleanupTodos = window.mishoo?.onPetShowTodos(() => setTodoOpen(true));
     const cleanupPatrol = window.mishoo?.onPetPatrolState(setPatrol);
+    const cleanupActivityMode = window.mishoo?.onPetActivityMode(saveActivityMode);
     return () => {
       cleanupTimer?.();
       cleanupTodos?.();
       cleanupPatrol?.();
+      cleanupActivityMode?.();
       if (bubbleTimer.current) window.clearTimeout(bubbleTimer.current);
     };
   });
 
   useEffect(() => {
-    void window.mishoo?.setPetPatrolPaused(todoOpen);
-  }, [todoOpen]);
+    const shouldPatrol = running && phase === 'work' && activityMode === 'patrol' && !todoOpen;
+    void window.mishoo?.setPetPatrolPaused(!shouldPatrol);
+  }, [activityMode, phase, running, todoOpen]);
 
   const interact = () => {
     setActiveReaction('jump');
@@ -200,7 +225,7 @@ export function DesktopPet() {
     const nextRunning = !running;
     setRunning(nextRunning);
     const chat = CHAT_LINES[Math.floor(Math.random() * CHAT_LINES.length)];
-    showBubble(`${chat} ${nextRunning ? '专注计时开始！' : '本轮已暂停。'}`);
+    showBubble(`${chat} ${nextRunning ? 'Focus timer started!' : 'Timer paused. Time to rest.'}`);
   };
 
   const snoozeReminder = () => {
@@ -212,7 +237,7 @@ export function DesktopPet() {
     if (reminderKind === 'posture') current.nextPostureAt = Date.now() + 10 * 60 * 1000;
     localStorage.setItem('mishoo.reminders', JSON.stringify(current));
     setReminderKind(null);
-    showBubble('好，10 分钟后再提醒你。');
+    showBubble('Okay, I will remind you again in 10 minutes.');
   };
 
   const onPointerDown = (event: React.PointerEvent) => {
@@ -246,7 +271,7 @@ export function DesktopPet() {
     setTodoText('');
   };
 
-  const baseMotion: PetMotion = phase !== 'work'
+  const baseMotion: PetMotion = !running || phase !== 'work' || activityMode === 'calm'
     ? 'rest'
     : patrol.mode === 'walking'
       ? 'walk'
@@ -263,7 +288,7 @@ export function DesktopPet() {
       className="desktopPetRoot"
       onContextMenu={(event) => {
         event.preventDefault();
-        void window.mishoo?.showPetMenu({ running, phase, remaining });
+        void window.mishoo?.showPetMenu({ running, phase, remaining, activityMode });
       }}
       onWheel={(event) => {
         event.preventDefault();
@@ -273,7 +298,7 @@ export function DesktopPet() {
       {bubble && !todoOpen && (
         <aside className="petBubble" role="status">
           <span>{bubble}</span>
-          {reminderKind && <button onClick={snoozeReminder}><RotateCcw size={13} /> 延后 10 分钟</button>}
+          {reminderKind && <button onClick={snoozeReminder}><RotateCcw size={13} /> Remind me in 10 min</button>}
         </aside>
       )}
 
@@ -285,8 +310,21 @@ export function DesktopPet() {
         onPointerCancel={onPointerUp}
       >
         <div className={`petTimerBadge ${running ? 'isRunning' : ''}`}>
-          <span>{phase === 'work' ? '专注' : phase === 'longBreak' ? '长休' : '休息'}</span>
+          <span>{phase === 'work' ? 'Focus' : phase === 'longBreak' ? 'Long break' : 'Break'}</span>
           <strong>{formatTime(remaining)}</strong>
+          <button
+            className="petTimerControl"
+            type="button"
+            aria-label={running ? 'Pause timer and let Mishoo rest' : 'Start timer'}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              toggleTimer();
+            }}
+          >
+            {running ? <Pause size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" />}
+            {running ? 'Pause & rest' : 'Start'}
+          </button>
         </div>
         <div className={`desktopPetVisual facing-${patrol.direction === 1 ? 'right' : 'left'}`}>
           <div className={`desktopPetMotion patrol-${patrol.mode}`}>
@@ -295,7 +333,7 @@ export function DesktopPet() {
               className={petVideoClassName}
               src={asset(GOLDEN_PUPPY_ASSETS[currentMotion])}
               poster={asset(GOLDEN_PUPPY_ASSETS.poster)}
-              aria-label="Mishoo 幼年金毛桌宠"
+              aria-label="Mishoo golden retriever puppy desktop pet"
               autoPlay
               loop={currentMotion !== 'jump'}
               muted
@@ -320,21 +358,21 @@ export function DesktopPet() {
       </section>
 
       {todoOpen && (
-        <section className="petTodoPanel" aria-label="咪咻待办">
-          <header><strong>待办</strong><button onClick={() => setTodoOpen(false)} aria-label="关闭待办"><X size={17} /></button></header>
+        <section className="petTodoPanel" aria-label="Mishoo to-do list">
+          <header><strong>To-do</strong><button onClick={() => setTodoOpen(false)} aria-label="Close to-do list"><X size={17} /></button></header>
           <form onSubmit={addTodo}>
-            <input value={todoText} onChange={(event) => setTodoText(event.target.value)} placeholder="新增一件小事…" autoFocus />
-            <button type="submit" aria-label="新增待办"><Plus size={17} /></button>
+            <input value={todoText} onChange={(event) => setTodoText(event.target.value)} placeholder="Add a small task…" autoFocus />
+            <button type="submit" aria-label="Add task"><Plus size={17} /></button>
           </form>
           <div className="petTodoList">
-            {todos.length === 0 && <p>还没有待办，轻装上阵。</p>}
+            {todos.length === 0 && <p>No tasks yet. Keep it light.</p>}
             {todos.map((todo) => (
               <div className={todo.done ? 'isDone' : ''} key={todo.id}>
-                <button onClick={() => setTodos((current) => current.map((item) => item.id === todo.id ? { ...item, done: !item.done } : item))} aria-label="切换完成状态">
+                <button onClick={() => setTodos((current) => current.map((item) => item.id === todo.id ? { ...item, done: !item.done } : item))} aria-label="Toggle task status">
                   {todo.done && <Check size={13} />}
                 </button>
                 <span>{todo.text}</span>
-                <button onClick={() => setTodos((current) => current.filter((item) => item.id !== todo.id))} aria-label="删除待办"><Trash2 size={14} /></button>
+                <button onClick={() => setTodos((current) => current.filter((item) => item.id !== todo.id))} aria-label="Delete task"><Trash2 size={14} /></button>
               </div>
             ))}
           </div>

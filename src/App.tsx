@@ -4,6 +4,7 @@ import { DesktopPet } from './DesktopPet';
 
 type PetId = 'mishoo-cat' | 'cocoa-dog' | 'snow-rabbit' | 'pom-puppy' | 'lop-rabbit' | 'bamboo-panda';
 type Lang = 'zh' | 'en';
+type PetActivityMode = 'calm' | 'patrol';
 
 /** Prefixes static asset paths with the app's base URL so builds deployed
  * under a subpath (e.g. /mishoo/) still resolve images/videos/downloads. */
@@ -15,6 +16,7 @@ type Settings = {
   pet: PetId;
   strictMode: boolean;
   language: Lang;
+  petActivity: PetActivityMode;
 };
 
 type Stats = {
@@ -120,6 +122,10 @@ const UI: Record<Lang, Record<string, string>> = {
     finish: '回到工作',
     skip: '现在退出休息屏幕',
     browserFallback: '当前在浏览器预览中运行，已使用网页内休息遮罩。桌面版会打开真正的全屏窗口。',
+    petMotion: '桌宠专注时动作',
+    calmRest: '安静休息（推荐）',
+    gentlePatrol: '轻柔巡逻',
+    petMotionHint: '暂停计时后，桌宠始终停止移动并播放休息动作。',
   },
   en: {
     heroTitle: 'Let a real pet press pause for you.',
@@ -151,6 +157,10 @@ const UI: Record<Lang, Record<string, string>> = {
     finish: 'Back to work',
     skip: 'Exit break screen now',
     browserFallback: 'You are running in browser preview, so Mishoo used an in-page overlay. The desktop app opens a real fullscreen window.',
+    petMotion: 'Desktop pet motion',
+    calmRest: 'Calm rest (recommended)',
+    gentlePatrol: 'Gentle patrol while focusing',
+    petMotionHint: 'Pausing the timer always stops movement and plays the rest animation.',
   },
 };
 
@@ -372,7 +382,8 @@ const DEFAULT_SETTINGS: Settings = {
   breakMinutes: 5,
   pet: 'cocoa-dog',
   strictMode: true,
-  language: 'zh',
+  language: 'en',
+  petActivity: 'calm',
 };
 
 const DEFAULT_STATS: Stats = {
@@ -1062,6 +1073,14 @@ function ControlPanel() {
             <input type="checkbox" checked={settings.strictMode} onChange={(event) => setSettings({ ...settings, strictMode: event.target.checked })} />
             <span>{t.strict}</span>
           </label>
+          <label className="field">
+            <span>{t.petMotion}</span>
+            <select value={settings.petActivity} onChange={(event) => setSettings({ ...settings, petActivity: event.target.value as PetActivityMode })}>
+              <option value="calm">{t.calmRest}</option>
+              <option value="patrol">{t.gentlePatrol}</option>
+            </select>
+          </label>
+          <p className="fieldHint">{t.petMotionHint}</p>
         </article>
 
         <article className="panel petPickerPanel">

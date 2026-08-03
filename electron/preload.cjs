@@ -19,6 +19,11 @@ contextBridge.exposeInMainWorld('mishoo', {
     ipcRenderer.on('pet:show-todos', handler);
     return () => ipcRenderer.removeListener('pet:show-todos', handler);
   },
+  onPetActivityMode: (callback) => {
+    const handler = (_event, mode) => callback(mode);
+    ipcRenderer.on('pet:activity-mode', handler);
+    return () => ipcRenderer.removeListener('pet:activity-mode', handler);
+  },
   onPetPatrolState: (callback) => {
     const handler = (_event, state) => callback(state);
     ipcRenderer.on('pet:patrol-state', handler);

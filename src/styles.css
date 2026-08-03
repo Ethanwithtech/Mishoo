@@ -136,13 +136,27 @@ body.desktopPetDocument {
   background: rgba(255, 255, 255, .92);
   box-shadow: 0 5px 18px rgba(43, 24, 15, .18);
   transform: translateX(-50%);
-  pointer-events: none;
+  pointer-events: auto;
   font-size: 11px;
   white-space: nowrap;
 }
 
 .petTimerBadge span { color: #83532f; font-weight: 750; }
 .petTimerBadge strong { font-variant-numeric: tabular-nums; }
+.petTimerControl {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  color: #7c3f18;
+  background: #fff0df;
+  font-size: 10px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+.petTimerControl:hover { background: #ffe3c4; }
 .petTimerBadge.isRunning::before {
   content: '';
   width: 6px;
@@ -465,7 +479,8 @@ body.desktopPetDocument {
   font-weight: 800;
 }
 
-.field input {
+.field input,
+.field select {
   width: 100%;
   padding: 14px 16px;
   border: 1px solid #efd4bd;
@@ -475,9 +490,17 @@ body.desktopPetDocument {
   outline: none;
 }
 
-.field input:focus {
+.field input:focus,
+.field select:focus {
   border-color: #f97316;
   box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.12);
+}
+
+.fieldHint {
+  margin: -6px 0 4px;
+  color: #8d7466;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .toggleField {

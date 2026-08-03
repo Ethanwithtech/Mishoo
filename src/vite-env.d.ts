@@ -13,9 +13,10 @@ interface MishooBridge {
   movePet: (point: { screenX: number; screenY: number }) => Promise<void>;
   endPetDrag: () => Promise<void>;
   resizePet: (delta: number) => Promise<number>;
-  showPetMenu: (state: { running: boolean; phase: 'work' | 'shortBreak' | 'longBreak'; remaining: number }) => Promise<void>;
+  showPetMenu: (state: { running: boolean; phase: 'work' | 'shortBreak' | 'longBreak'; remaining: number; activityMode: 'calm' | 'patrol' }) => Promise<void>;
   onPetTimerToggle: (callback: () => void) => () => void;
   onPetShowTodos: (callback: () => void) => () => void;
+  onPetActivityMode: (callback: (mode: 'calm' | 'patrol') => void) => () => void;
   onPetPatrolState: (callback: (state: { direction: -1 | 1; mode: 'walking' | 'idle' }) => void) => () => void;
   setPetPatrolPaused: (paused: boolean) => Promise<void>;
 }

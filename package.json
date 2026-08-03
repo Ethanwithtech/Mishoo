@@ -13,7 +13,7 @@
     "desktop:golden": "python3 scripts/prepare-golden-puppy-assets.py",
     "pets:covers": "python3 scripts/generate-pet-covers.py",
     "direction:audit": "node scripts/build-direction-sprite.mjs",
-    "dist:win": "npm run desktop:frame && npm run build && electron-builder --win portable --x64",
+    "dist:win": "npm run build && electron-builder --win portable --x64",
     "video:key": "node scripts/key-video.mjs",
     "video:ai": "node scripts/ai-matting.mjs",
     "package:browsers": "pnpm run build && node scripts/package-browsers.mjs"
@@ -48,9 +48,12 @@
     "appId": "com.ethanwithtech.mishoo",
     "productName": "Mishoo 咪咻",
     "asar": true,
+    "compression": "maximum",
     "files": [
       "dist/**/*",
       "!dist/downloads/*.exe",
+      "!dist/desktop-pet/idle.webm",
+      "!dist/desktop-pet/framefront.webp",
       "electron/**/*",
       "package.json"
     ],
