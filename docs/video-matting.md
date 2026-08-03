@@ -41,7 +41,7 @@ public/videos/golden-alpha.webm
 public/videos/golden-alpha-preview.png
 ```
 
-其中 `golden-alpha.webm` 会被应用直接使用，`golden-alpha-preview.png` 用来检查抠像效果。
+其中 `golden-alpha.webm` 是脚本默认输出名，`golden-alpha-preview.png` 用来检查抠像效果。输出文件需要先确认在 Chrome/Electron 中透明通道可靠，再在宠物配置里替换路径并设置 `hasAlpha: true`；当前内置演示素材默认仍使用 `*-source.webm` 走运行时 canvas 抠绿。
 
 ## 参数说明
 
@@ -116,7 +116,7 @@ npm run video:key -- output.mov --mode alpha
 
 ### FFmpeg chromakey / colorkey
 
-这是当前项目默认方案，适合纯色背景素材。优点是快、稳定、完全本地；缺点是对复杂背景、渐变地面、阴影、水印无能为力。
+这是当前项目推荐的离线生成透明素材方案，适合纯色背景素材。当前内置演示为了保证动物一定可见，运行时仍用 canvas 对源视频抠绿；产品化后应把离线透明 WebM 验证稳定后再切到直接播放。优点是快、稳定、完全本地；缺点是对复杂背景、渐变地面、阴影、水印无能为力。
 
 ## 素材生成要求
 

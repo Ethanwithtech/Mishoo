@@ -22,6 +22,17 @@ type OverlayResult = {
   message?: string;
 };
 
+type OverlayPayload = {
+  durationSec: number;
+  pet: ExtensionSettings['pet'];
+  strictMode: boolean;
+  language: ExtensionSettings['language'];
+};
+
+const CONTENT_SCRIPT_FILE = 'assets/mishoo-content.js';
+const INJECTABLE_PROTOCOLS = new Set(['http:', 'https:', 'file:']);
+
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object';
 }
@@ -93,28 +104,63 @@ async function pauseTimer() {
   return getState();
 }
 
+function canInjectIntoTab(tab: chrome.tabs.Tab) {
+  if (!tab.id || !tab.url) return false;
+
+  try {
+    return INJECTABLE_PROTOCOLS.has(new URL(tab.url).protocol);
+  } catch {
+    return false;
+  }
+}
+
+function overlayPayloadFromSettings(settings: ExtensionSettings): OverlayPayload {
+  return {
+    durationSec: settings.breakMinutes * 60,
+    pet: settings.pet,
+    strictMode: settings.strictMode,
+    language: settings.language,
+  };
+}
+
+async function postOverlayMessage(tabId: number, payload: OverlayPayload) {
+  await chrome.tabs.sendMessage(tabId, {
+    type: 'mishoo:show-overlay',
+    payload,
+  });
+}
+
+async function ensureContentScript(tabId: number) {
+  await chrome.scripting.executeScript({
+    target: { tabId },
+    files: [CONTENT_SCRIPT_FILE],
+  });
+}
+
 async function sendOverlayToActiveTab(settings: ExtensionSettings): Promise<OverlayResult> {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   const activeTab = tabs[0];
   const lang = settings.language;
 
-  if (!activeTab?.id) {
+  if (!activeTab?.id || !canInjectIntoTab(activeTab)) {
     return { ok: false, message: UI[lang].noPage };
   }
 
+  const payload = overlayPayloadFromSettings(settings);
+
   try {
-    await chrome.tabs.sendMessage(activeTab.id, {
-      type: 'mishoo:show-overlay',
-      payload: {
-        durationSec: settings.breakMinutes * 60,
-        pet: settings.pet,
-        strictMode: settings.strictMode,
-        language: lang,
-      },
-    });
+    await postOverlayMessage(activeTab.id, payload);
     return { ok: true, message: UI[lang].summoned };
   } catch {
-    return { ok: false, message: UI[lang].noPage };
+    try {
+      // Some pages were opened before the extension was installed/reloaded, so the
+      // declarative content script is not present yet. Inject once on demand.
+      await ensureContentScript(activeTab.id);
+      await postOverlayMessage(activeTab.id, payload);
+      return { ok: true, message: UI[lang].summoned };
+    } catch {
+      return { ok: false, message: UI[lang].noPage };
+    }
   }
 }
 

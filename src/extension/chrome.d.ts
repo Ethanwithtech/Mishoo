@@ -36,6 +36,16 @@ declare namespace chrome {
     function sendMessage<T = unknown>(tabId: number, message: unknown): Promise<T>;
   }
 
+
+  namespace scripting {
+    function executeScript(details: {
+      target: { tabId: number; frameIds?: number[]; allFrames?: boolean };
+      files?: string[];
+      func?: (...args: any[]) => unknown;
+      args?: unknown[];
+    }): Promise<unknown[]>;
+  }
+
   namespace alarms {
     interface Alarm {
       name: string;

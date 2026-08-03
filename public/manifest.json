@@ -11,19 +11,38 @@
     "service_worker": "assets/mishoo-background.js",
     "type": "module"
   },
-  "permissions": ["alarms", "storage", "tabs"],
-  "host_permissions": ["<all_urls>"],
+  "permissions": [
+    "alarms",
+    "storage",
+    "tabs",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["assets/mishoo-content.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "assets/mishoo-content.js"
+      ],
       "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["videos/golden-alpha.webm", "videos/mia-source.webm", "videos/samoyed-source.webm", "videos/pomeranian-source.webm", "videos/lop-rabbit-source.webm"],
-      "matches": ["<all_urls>"]
+      "resources": [
+        "videos/*.webm",
+        "videos/*.gif",
+        "videos/*.png",
+        "videos/*.jpg",
+        "videos/*.jpeg"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ]
 }

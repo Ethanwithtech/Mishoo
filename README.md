@@ -4,10 +4,15 @@ Mishoo 是一个面向久坐打工人的桌面休息守护应用。到点后，�
 
 ## 当前 MVP
 
+- Windows 桌面宠物入口：透明无边框、置顶、拖动、滚轮缩放、右键菜单
+- 桌宠番茄钟：默认 25 分钟工作 / 5 分钟短休，每 4 轮自动长休息
+- 点击互动：跳跃、压扁回弹、左右抖动与随机中文气泡
+- 喝水/久坐提醒：轻提示音、桌面气泡、延后提醒
+- 本地待办：新增、勾选、删除并自动保存
 - 工作/休息时长设置
 - `Pawse Mode` 全屏休息遮罩
 - 真实宠物照片：小猫、小狗、兔兔
-- 金毛休息遮罩已支持网页背景可见的透明 WebM 覆盖层：`public/videos/golden-alpha.webm`
+- 真实宠物绿幕视频遮罩：默认使用可见源视频 + Canvas 实时抠绿，避免不可靠 alpha WebM 导致动物消失
 - 中文 / English 双语切换
 - 休息期间拦截遮罩窗口内键盘输入
 - 本地休息记录
@@ -31,20 +36,22 @@ src/extension/content.ts
 构建后在 Chrome 中加载：
 
 ```bash
-npm run build
+pnpm run build
 ```
 
 然后打开 Chrome：`chrome://extensions` → 开启 Developer mode → Load unpacked → 选择项目的 `dist` 目录。
+
+也可以把 `dist` 目录内容压成 zip 用于上传 Chrome Web Store；本地调试仍建议使用 **Load unpacked**，因为 Chrome 不能像普通 App 一样直接双击 zip 安装未上架扩展。
 
 插件能力：
 
 - popup 中设置工作/休息时长、宠物、语言和 Pawse Mode
 - 点击“立即召唤”会把咪咻注入到当前网页
 - 点击“开始专注计时”后，到点由后台脚本向当前活动网页发送休息提醒
-- 内容脚本在网页最上层创建透明前景覆盖层，播放 `videos/golden-alpha.webm`
+- 内容脚本在网页最上层创建透明前景覆盖层，播放内置绿幕源视频并实时抠绿
 - 网页内容仍在底下可见，左上角显示小倒计时，右上角保留退出按钮
 
-注意：Chrome 内置页面、扩展商店页面和部分受限页面无法注入 content script；请在普通网页中测试。
+注意：插件可以在大多数普通 `http://` / `https://` 网页使用，例如新闻站、文档站、公司后台、GitHub 等。Chrome 出于安全限制不允许扩展注入 `chrome://`、Chrome Web Store、新标签页、部分浏览器内置 PDF/设置页；这些页面会提示“请打开一个普通网页”。如果你刚重新加载插件，已经打开的旧网页可能没有 content script，当前版本会在点击“立即召唤”时自动动态注入一次。
 
 ## 重要边界
 
@@ -66,6 +73,15 @@ npm run dev
 ```bash
 npm run build
 ```
+
+## Windows 单文件 EXE
+
+```bash
+npm install
+npm run dist:win
+```
+
+产物输出到 `release/`。当前桌面端沿用 Electron 技术栈，以复用 Mishoo 已有官网、浏览器插件、透明宠物素材和 Pawse Mode；不会同时维护一套功能重复的 Python 客户端。桌宠升级与八方向素材审计见 `docs/desktop-pet-v0.2.md`。
 
 ## 视频抠像
 
@@ -89,7 +105,10 @@ npm run video:ai -- input.mp4
 
 第一次运行会创建本地 Python 虚拟环境 `.mishoo-video-env`，安装 PyTorch CPU 版本和 `backgroundremover`，并下载模型，耗时会比较久。
 
-更多说明见：`docs/video-matting.md`
+更多说明见：`docs/animal-video-extraction-and-extension.md`。
+
+关于“上传视频提取动物形象”和 Chrome 插件产品化的方案，见：`docs/animal-video-extraction-and-extension.md`
+- 普通用户 Chrome 插件安装与使用文档：`docs/chrome-extension-user-guide.md`
 
 ## 产品方向
 

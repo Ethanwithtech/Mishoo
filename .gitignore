@@ -1,5 +1,7 @@
 node_modules
 dist
+dist-web
+dist-browsers
 .DS_Store
 npm-debug.log*
 .env
@@ -7,6 +9,13 @@ npm-debug.log*
 out
 coverage
 .playwright-mcp/
+.claude/
+artifacts/
+release/
+xhs-pipeline/
+/mishoo-chrome-extension/
+/mishoo-chrome-extension.zip
+xhs-pipeline/runs/
 *.mp4
 /*.mov
 /*.webm
@@ -14,3 +23,4 @@ public/videos/*-preview.png
 .mishoo-video-env/
 .mishoo-video-bin/
 .mishoo-video-cache/
+截屏*.png
