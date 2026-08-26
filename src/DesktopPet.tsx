@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Check, Pause, Play, Plus, RotateCcw, Trash2, X } from 'lucide-react';
+import { BellOff, Check, Moon, Pause, Play, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 
 type TimerPhase = 'work' | 'shortBreak' | 'longBreak';
 type PetMotion = 'idle' | 'walk' | 'jump' | 'rest';
@@ -95,6 +95,14 @@ export function DesktopPet() {
   const [todoText, setTodoText] = useState('');
   const [activityMode, setActivityMode] = useState<PetActivityMode>(() => readStored<{ petActivity?: PetActivityMode }>('mishoo.settings', {}).petActivity ?? 'calm');
   const [patrol, setPatrol] = useState<{ direction: -1 | 1; mode: 'walking' | 'idle' }>({ direction: -1, mode: 'walking' });
+  // User-controlled rest: pins the pet to its lie-down animation and stops it moving,
+  // independent of the timer. This is the "let it settle down" control.
+  const [restPinned, setRestPinned] = useState<boolean>(() => readStored<{ restPinned?: boolean }>('mishoo.settings', {}).restPinned ?? false);
+  // Do-Not-Disturb: silences water/posture reminders, bubbles and patrol for a
+  // focused stretch, so a companion never becomes a nag.
+  const [dnd, setDnd] = useState<boolean>(() => readStored<{ dnd?: boolean }>('mishoo.settings', {}).dnd ?? false);
+  const dndRef = useRef(dnd);
+  dndRef.current = dnd;
   const drag = useRef({ active: false, moved: false, startX: 0, startY: 0 });
   const bubbleTimer = useRef<number | null>(null);
   const controlsTimer = useRef<number | null>(null);
@@ -105,10 +113,12 @@ export function DesktopPet() {
     const syncSettings = (event: StorageEvent) => {
       if (event.key !== 'mishoo.settings' || !event.newValue) return;
       try {
-        const settings = JSON.parse(event.newValue) as { petActivity?: PetActivityMode };
+        const settings = JSON.parse(event.newValue) as { petActivity?: PetActivityMode; restPinned?: boolean; dnd?: boolean };
         if (settings.petActivity === 'calm' || settings.petActivity === 'patrol') {
           setActivityMode(settings.petActivity);
         }
+        if (typeof settings.restPinned === 'boolean') setRestPinned(settings.restPinned);
+        if (typeof settings.dnd === 'boolean') setDnd(settings.dnd);
       } catch {
         // Keep the current mode if another window writes malformed settings.
       }
@@ -143,11 +153,37 @@ export function DesktopPet() {
     });
   };
 
+  const persistSetting = (patch: Record<string, unknown>) => {
+    const settings = readStored<Record<string, unknown>>('mishoo.settings', {});
+    localStorage.setItem('mishoo.settings', JSON.stringify({ ...settings, ...patch }));
+  };
+
   const saveActivityMode = (mode: PetActivityMode) => {
     setActivityMode(mode);
-    const settings = readStored<Record<string, unknown>>('mishoo.settings', {});
-    localStorage.setItem('mishoo.settings', JSON.stringify({ ...settings, petActivity: mode }));
+    persistSetting({ petActivity: mode });
     showBubble(mode === 'calm' ? 'Calm mode on. Mishoo will rest quietly.' : 'Gentle patrol is on during focus time.');
+  };
+
+  const toggleRestPinned = () => {
+    setRestPinned((current) => {
+      const next = !current;
+      persistSetting({ restPinned: next });
+      showBubble(next ? 'Okay, lying down. Wake me with a tap.' : 'Up and about again!');
+      return next;
+    });
+  };
+
+  const toggleDnd = () => {
+    setDnd((current) => {
+      const next = !current;
+      persistSetting({ dnd: next });
+      if (next) {
+        setReminderKind(null);
+        setBubble(null);
+      }
+      showBubble(next ? 'Do-Not-Disturb on. I will stay quiet.' : 'Do-Not-Disturb off.');
+      return next;
+    });
   };
 
   useEffect(() => {
@@ -187,6 +223,16 @@ export function DesktopPet() {
     localStorage.setItem('mishoo.reminders', JSON.stringify(reminders));
 
     const check = () => {
+      // Do-Not-Disturb silences reminders entirely (still slides the schedule
+      // forward so nothing fires in a burst the moment it's turned off).
+      if (dndRef.current) {
+        const current = readStored<ReminderState>('mishoo.reminders', reminders);
+        const currentTime = Date.now();
+        if (currentTime >= current.nextWaterAt) current.nextWaterAt = currentTime + WATER_INTERVAL;
+        if (currentTime >= current.nextPostureAt) current.nextPostureAt = currentTime + POSTURE_INTERVAL;
+        localStorage.setItem('mishoo.reminders', JSON.stringify(current));
+        return;
+      }
       const current = readStored<ReminderState>('mishoo.reminders', reminders);
       const currentTime = Date.now();
       if (currentTime >= current.nextWaterAt) {
@@ -224,16 +270,24 @@ export function DesktopPet() {
   });
 
   useEffect(() => {
-    const shouldPatrol = running && phase === 'work' && activityMode === 'patrol' && !todoOpen;
+    // Rest-pinned or DND both stop the pet wandering.
+    const shouldPatrol = running && phase === 'work' && activityMode === 'patrol' && !todoOpen && !restPinned && !dnd;
     void window.mishoo?.setPetPatrolPaused(!shouldPatrol);
-  }, [activityMode, phase, running, todoOpen]);
+  }, [activityMode, phase, running, todoOpen, restPinned, dnd]);
 
   const interact = () => {
+    revealControls();
+    // Tapping a resting-pinned pet wakes it rather than making it jump in place.
+    if (restPinned) {
+      toggleRestPinned();
+      return;
+    }
     setActiveReaction('jump');
     setAnimationKey((value) => value + 1);
-    revealControls();
-    const chat = CHAT_LINES[Math.floor(Math.random() * CHAT_LINES.length)];
-    showBubble(chat);
+    if (!dnd) {
+      const chat = CHAT_LINES[Math.floor(Math.random() * CHAT_LINES.length)];
+      showBubble(chat);
+    }
   };
 
   const snoozeReminder = () => {
@@ -279,7 +333,7 @@ export function DesktopPet() {
     setTodoText('');
   };
 
-  const baseMotion: PetMotion = !running || phase !== 'work' || activityMode === 'calm'
+  const baseMotion: PetMotion = restPinned || !running || phase !== 'work' || activityMode === 'calm'
     ? 'rest'
     : patrol.mode === 'walking'
       ? 'walk'
@@ -334,6 +388,28 @@ export function DesktopPet() {
             {running ? <Pause size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" />}
             {running ? 'Pause & rest' : 'Start'}
           </button>
+          <div className="petQuickToggles" onPointerDown={(event) => event.stopPropagation()}>
+            <button
+              type="button"
+              className={`petToggleChip ${restPinned ? 'isActive' : ''}`}
+              aria-pressed={restPinned}
+              aria-label={restPinned ? 'Wake Mishoo up' : 'Let Mishoo lie down and rest'}
+              title={restPinned ? 'Wake up' : 'Lie down'}
+              onClick={(event) => { event.stopPropagation(); toggleRestPinned(); }}
+            >
+              <Moon size={12} /> {restPinned ? 'Resting' : 'Lie down'}
+            </button>
+            <button
+              type="button"
+              className={`petToggleChip ${dnd ? 'isActive' : ''}`}
+              aria-pressed={dnd}
+              aria-label={dnd ? 'Turn off Do Not Disturb' : 'Turn on Do Not Disturb'}
+              title="Do Not Disturb"
+              onClick={(event) => { event.stopPropagation(); toggleDnd(); }}
+            >
+              <BellOff size={12} /> {dnd ? 'Quiet' : 'DND'}
+            </button>
+          </div>
         </div>
         <div className={`desktopPetVisual facing-${patrol.direction === 1 ? 'right' : 'left'}`}>
           <div className={`desktopPetMotion patrol-${patrol.mode}`}>

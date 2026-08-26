@@ -1108,3 +1108,253 @@ body.desktopPetDocument {
   .topBar, .downloadHero, .loginEntry { align-items: flex-start; flex-direction: column; }
   .downloadQuickLinks { justify-content: flex-start; }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Narrative landing redesign: full-height story screens.
+   Flow: see the effect → meet the desktop pet → why it's safe →
+   settings/dashboard → download. See App.tsx ControlPanel.
+   ───────────────────────────────────────────────────────────── */
+
+.siteTopBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 4px 26px;
+}
+
+/* Screen 1 — the pet blocking the screen is the whole message. */
+.storyHero {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: min(78vh, 720px);
+  padding: 40px;
+  border-radius: 40px;
+  overflow: hidden;
+  border: 1px solid rgba(120, 68, 34, 0.12);
+  box-shadow: 0 28px 80px rgba(78, 39, 12, 0.14);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(249, 115, 22, 0.16), transparent 45%),
+    radial-gradient(circle at 78% 12%, rgba(139, 92, 246, 0.14), transparent 42%),
+    linear-gradient(180deg, #fffdf8, #fff1df);
+}
+
+.storyHeroStage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.storyHeroStage video,
+.storyHeroStage canvas {
+  width: min(560px, 82%);
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+}
+
+.storyHeroCopy {
+  position: relative;
+  z-index: 2;
+  max-width: 620px;
+  text-align: center;
+  background: radial-gradient(ellipse at center, rgba(255, 248, 239, 0.82) 0%, rgba(255, 248, 239, 0.4) 60%, transparent 100%);
+  padding: 20px;
+  border-radius: 30px;
+}
+
+.storyHeroCopy h1 {
+  margin: 12px 0 14px;
+  font-size: clamp(38px, 5.4vw, 66px);
+  line-height: 0.98;
+  letter-spacing: -0.06em;
+  color: #3d1c0c;
+}
+
+.storyHeroLead {
+  max-width: 480px;
+  margin: 0 auto 26px;
+  font-size: 18px;
+  color: #6b5243;
+  line-height: 1.7;
+}
+
+.bigSummon {
+  min-height: 58px;
+  padding: 0 30px;
+  font-size: 17px;
+}
+
+.scrollCue {
+  margin-top: 22px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #a26034;
+  animation: floatPet 3s ease-in-out infinite;
+}
+
+/* Screen 2 — companion */
+.storyCompanion {
+  display: grid;
+  grid-template-columns: 1fr 0.8fr;
+  gap: 32px;
+  align-items: center;
+  margin-top: 22px;
+  padding: 40px;
+  border-radius: 34px;
+  border: 1px solid rgba(120, 68, 34, 0.12);
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 28px 80px rgba(78, 39, 12, 0.1);
+  backdrop-filter: blur(18px);
+}
+
+.storyCompanionCopy h2,
+.storyFeatures h2 {
+  margin: 12px 0 16px;
+  font-size: clamp(28px, 3.6vw, 44px);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  color: #3d1c0c;
+}
+
+.companionTraits {
+  list-style: none;
+  margin: 24px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.companionTraits li {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: #fff1df;
+  color: #7c3f18;
+  font-weight: 850;
+}
+
+.companionTraits svg { color: #f97316; flex-shrink: 0; }
+
+.storyCompanionPet {
+  display: flex;
+  min-height: 340px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, #fff1df, #fff8ef);
+}
+
+/* Screen 3 — features */
+.storyFeatures {
+  margin-top: 22px;
+  padding: 40px;
+  border-radius: 34px;
+  border: 1px solid rgba(120, 68, 34, 0.12);
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 28px 80px rgba(78, 39, 12, 0.1);
+  backdrop-filter: blur(18px);
+  text-align: center;
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-top: 28px;
+  text-align: left;
+}
+
+.featureCard {
+  padding: 24px;
+  border-radius: 24px;
+  background: #fffdf8;
+  border: 1px solid rgba(120, 68, 34, 0.1);
+}
+
+.featureCard svg { color: #f97316; }
+
+.featureCard h3 {
+  margin: 14px 0 8px;
+  font-size: 19px;
+  color: #48220f;
+}
+
+.featureCard p { color: #6b5243; line-height: 1.7; margin: 0; }
+
+/* Extension settings-popup screenshot in the install guide */
+.extensionShot {
+  margin: 20px 0 0;
+}
+
+.extensionShot img {
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid rgba(120, 68, 34, 0.14);
+  box-shadow: 0 14px 40px rgba(78, 39, 12, 0.14);
+  display: block;
+}
+
+.extensionShot figcaption {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #8a6a55;
+  text-align: center;
+}
+
+/* Until the real screenshot is added, show a dashed placeholder box. */
+.extensionShot.missing img { display: none; }
+.extensionShot.missing {
+  padding: 28px;
+  border: 2px dashed rgba(120, 68, 34, 0.28);
+  border-radius: 18px;
+  text-align: center;
+  color: #a26034;
+  background: #fffaf4;
+}
+
+@media (max-width: 900px) {
+  .storyCompanion { grid-template-columns: 1fr; }
+  .featureGrid { grid-template-columns: 1fr; }
+  .companionTraits { grid-template-columns: 1fr; }
+}
+
+/* Desktop pet quick toggles: lie-down (rest) and Do-Not-Disturb, shown in the
+   revealed control badge next to the timer. */
+.petQuickToggles {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.petToggleChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  color: #7c3f18;
+  background: #fff0df;
+  font-size: 10px;
+  font-weight: 850;
+  white-space: nowrap;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.petToggleChip:hover { background: #ffe3c4; }
+
+.petToggleChip.isActive {
+  color: #fff;
+  background: linear-gradient(135deg, #f97316, #ef4444);
+}

@@ -126,6 +126,28 @@ const UI: Record<Lang, Record<string, string>> = {
     calmRest: '安静休息（推荐）',
     gentlePatrol: '轻柔巡逻',
     petMotionHint: '暂停计时后，桌宠始终停止移动并播放休息动作。',
+    heroEyebrow: '桌面休息守护',
+    heroWatchHint: '真实宠物走到屏幕前，挡住你的工作 —— 点一下亲自看看。',
+    heroSummonNow: '召唤宠物挡屏',
+    heroScrollHint: '向下看它还能陪你',
+    companionEyebrow: '不只是打断，更是陪伴',
+    companionTitle: '专注的时候，它安静待在桌角。',
+    companionText: '休息之外，咪咻是一只常驻桌面的宠物：你工作时它安静趴着，累了点一下它会回应你，也可以让它躺下、拖到任意角落，或开启勿扰模式让它彻底安静。',
+    companionCalm: '静止躺下',
+    companionDrag: '拖到任意位置',
+    companionTap: '点击有反应',
+    companionDnd: '勿扰模式',
+    featuresEyebrow: '为什么用得放心',
+    featuresTitle: '温柔，但尊重你的边界。',
+    featurePrivacyTitle: '隐私优先',
+    featurePrivacyText: '不登录、不读屏、不用摄像头、不上传任何数据。全部在本地运行。',
+    featurePawseTitle: 'Pawse 模式',
+    featurePawseText: '休息时遮罩会拦截键盘输入，但安全退出按钮始终可见，绝不把你真正困住。',
+    featureCustomTitle: '自定义宠物',
+    featureCustomText: '上传一段绿幕视频，咪咻会抠像成透明宠物，换成你想要的那一只。',
+    installEyebrow: '开始使用',
+    installTitle: '想好了，就把它带回家。',
+    installExtensionShot: 'Chrome 扩展安装后的设置弹窗',
   },
   en: {
     heroTitle: 'Let a real pet press pause for you.',
@@ -161,6 +183,28 @@ const UI: Record<Lang, Record<string, string>> = {
     calmRest: 'Calm rest (recommended)',
     gentlePatrol: 'Gentle patrol while focusing',
     petMotionHint: 'Pausing the timer always stops movement and plays the rest animation.',
+    heroEyebrow: 'Desktop break guardian',
+    heroWatchHint: 'A real pet walks onto your screen and blocks your work — tap to see it happen.',
+    heroSummonNow: 'Summon the pet',
+    heroScrollHint: 'See how it keeps you company below',
+    companionEyebrow: 'Not just an interruption — company',
+    companionTitle: 'While you focus, it rests quietly in the corner.',
+    companionText: 'Beyond breaks, Mishoo is a pet that lives on your desktop: it sits quietly while you work, reacts when you tap it, and can lie down, be dragged anywhere, or go fully quiet in Do-Not-Disturb mode.',
+    companionCalm: 'Lie down & rest',
+    companionDrag: 'Drag anywhere',
+    companionTap: 'Tap to react',
+    companionDnd: 'Do-Not-Disturb',
+    featuresEyebrow: 'Why it feels safe',
+    featuresTitle: 'Gentle, but it respects your boundaries.',
+    featurePrivacyTitle: 'Privacy-first',
+    featurePrivacyText: 'No login, no screen reading, no camera, no uploads. Everything runs locally.',
+    featurePawseTitle: 'Pawse mode',
+    featurePawseText: 'The overlay blocks keyboard input during a break, but a safe exit button is always visible — it never truly traps you.',
+    featureCustomTitle: 'Custom pets',
+    featureCustomText: 'Upload a green-screen clip and Mishoo keys it into a transparent pet, so you can bring your own.',
+    installEyebrow: 'Get started',
+    installTitle: 'When you are ready, take it home.',
+    installExtensionShot: 'The settings popup after installing the Chrome extension',
   },
 };
 
@@ -734,6 +778,18 @@ function DownloadHub({ language }: { language: Lang }) {
           <ol>
             {copy.installSteps.map((step) => <li key={step}>{step}</li>)}
           </ol>
+          {/* Extension settings-popup screenshot. Drop the real capture at
+              public/images/extension-popup.webp; until then this shows a labelled
+              placeholder rather than a broken image. */}
+          <figure className="extensionShot">
+            <img
+              src={asset('/images/extension-popup.webp')}
+              alt={UI[language].installExtensionShot}
+              loading="lazy"
+              onError={(e) => { e.currentTarget.closest('figure')?.classList.add('missing'); }}
+            />
+            <figcaption>{UI[language].installExtensionShot}</figcaption>
+          </figure>
         </article>
         <article className="faqPanel">
           <h3><HelpCircle size={20} /> {copy.faqTitle}</h3>
@@ -1019,35 +1075,87 @@ function ControlPanel() {
   return (
     <>
     <main className="appShell">
-      <section className="heroCard">
-        <div className="heroCopy">
-          <div className="topBar">
-            <div className="brandRow">
-              <div className="brandMark"><PawPrint size={22} /></div>
-              <span>Mishoo / 咪咻</span>
-            </div>
-            <button
-              className="languageButton"
-              onClick={() => setSettings({ ...settings, language: settings.language === 'zh' ? 'en' : 'zh' })}
-            >
-              <Globe2 size={16} /> {settings.language === 'zh' ? 'English' : '中文'}
-            </button>
-          </div>
-          <h1>{t.heroTitle}</h1>
-          <p>{t.heroText}</p>
-          {fallbackNotice && <div className="notice">{t.browserFallback}</div>}
-          <div className="heroActions">
-            <button className="primaryButton" onClick={() => setRunning((value) => !value)}>
-              {running ? <Coffee size={18} /> : <Play size={18} />}
-              {running ? t.pause : t.start}
-            </button>
-            <button className="ghostButton" onClick={triggerBreak}>{t.summon}</button>
-          </div>
+      {/* Persistent top bar (brand + language), lifted out of the hero so it stays
+          available across the new full-height narrative screens. */}
+      <div className="siteTopBar">
+        <div className="brandRow">
+          <div className="brandMark"><PawPrint size={22} /></div>
+          <span>Mishoo / 咪咻</span>
         </div>
-        <div className="heroPetPanel">
+        <button
+          className="languageButton"
+          onClick={() => setSettings({ ...settings, language: settings.language === 'zh' ? 'en' : 'zh' })}
+        >
+          <Globe2 size={16} /> {settings.language === 'zh' ? 'English' : '中文'}
+        </button>
+      </div>
+
+      {/* ─── Screen 1: the one thing that matters — a pet blocking your screen ─── */}
+      <section className="storyHero">
+        <div className="storyHeroStage">
+          {PETS[settings.pet].video ? (
+            <ChromaKeyPet
+              key={settings.pet}
+              src={PETS[settings.pet].video as string}
+              restLoopStart={PETS[settings.pet].restLoopStart}
+              hasAlpha={Boolean(PETS[settings.pet].hasAlpha)}
+            />
+          ) : (
+            <PetPhoto pet={settings.pet} large />
+          )}
+        </div>
+        <div className="storyHeroCopy">
+          <p className="sectionEyebrow">{t.heroEyebrow}</p>
+          <h1>{t.heroTitle}</h1>
+          <p className="storyHeroLead">{t.heroWatchHint}</p>
+          {fallbackNotice && <div className="notice">{t.browserFallback}</div>}
+          <button className="primaryButton bigSummon" onClick={triggerBreak}>
+            <PawPrint size={20} /> {t.heroSummonNow}
+          </button>
+          <div className="scrollCue">{t.heroScrollHint} ↓</div>
+        </div>
+      </section>
+
+      {/* ─── Screen 2: the desktop pet as company, not just interruption ─── */}
+      <section className="storyCompanion">
+        <div className="storyCompanionCopy">
+          <p className="sectionEyebrow">{t.companionEyebrow}</p>
+          <h2>{t.companionTitle}</h2>
+          <p>{t.companionText}</p>
+          <ul className="companionTraits">
+            <li><Coffee size={16} /> {t.companionCalm}</li>
+            <li><PawPrint size={16} /> {t.companionDrag}</li>
+            <li><Heart size={16} /> {t.companionTap}</li>
+            <li><Shield size={16} /> {t.companionDnd}</li>
+          </ul>
+        </div>
+        <div className="storyCompanionPet">
           <PetPhoto pet={settings.pet} large />
           <div className="petName">{PETS[settings.pet].name[settings.language]}</div>
           <div className="petHint">{PETS[settings.pet].description[settings.language]}</div>
+        </div>
+      </section>
+
+      {/* ─── Screen 3: why it's safe to install ─── */}
+      <section className="storyFeatures">
+        <p className="sectionEyebrow">{t.featuresEyebrow}</p>
+        <h2>{t.featuresTitle}</h2>
+        <div className="featureGrid">
+          <article className="featureCard">
+            <Shield size={22} />
+            <h3>{t.featurePrivacyTitle}</h3>
+            <p>{t.featurePrivacyText}</p>
+          </article>
+          <article className="featureCard">
+            <PawPrint size={22} />
+            <h3>{t.featurePawseTitle}</h3>
+            <p>{t.featurePawseText}</p>
+          </article>
+          <article className="featureCard">
+            <Sparkles size={22} />
+            <h3>{t.featureCustomTitle}</h3>
+            <p>{t.featureCustomText}</p>
+          </article>
         </div>
       </section>
 
