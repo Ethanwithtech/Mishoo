@@ -417,7 +417,14 @@ body.desktopPetDocument {
   border: 5px solid #fffaf4;
   border-radius: 28px;
   box-shadow: 0 16px 42px rgba(67, 31, 10, 0.18);
-  background: #fde6cc;
+  /* Layered "cozy corner" backdrop so the cut-out pets don't sit on a flat fill:
+     a warm sunburst glow, faint paw-print dots, and a soft floor gradient. */
+  background:
+    radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 0.65), transparent 55%),
+    radial-gradient(circle at 20% 18%, rgba(255, 205, 150, 0.22) 0 6px, transparent 7px),
+    radial-gradient(circle at 82% 30%, rgba(255, 205, 150, 0.2) 0 5px, transparent 6px),
+    radial-gradient(circle at 68% 12%, rgba(255, 205, 150, 0.16) 0 4px, transparent 5px),
+    linear-gradient(180deg, #ffe9cf 0%, #ffd9b3 55%, #f7c79a 100%);
 }
 
 .petPhotoLarge {
@@ -545,11 +552,17 @@ body.desktopPetDocument {
   place-items: center;
   gap: 10px;
   padding: 14px 8px;
-  border: 1px solid transparent;
+  border: 1px solid rgba(120, 68, 34, 0.08);
   border-radius: 22px;
   color: #4b2818;
-  background: #fff6eb;
+  background: linear-gradient(180deg, #fffdf8 0%, #fff2e0 100%);
   font-weight: 900;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.petOption:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 34px rgba(78, 39, 12, 0.12);
 }
 
 .petOption.selected {
@@ -1123,13 +1136,14 @@ body.desktopPetDocument {
   padding: 4px 4px 26px;
 }
 
-/* Screen 1 — the pet blocking the screen is the whole message. */
+/* Screen 1 — a calm, centred hero. The pet appears only when summoned (the real
+   full-screen block effect), so nothing overlaps the animal here. */
 .storyHero {
   position: relative;
   display: grid;
   place-items: center;
-  min-height: min(78vh, 720px);
-  padding: 40px;
+  min-height: min(64vh, 560px);
+  padding: 48px 40px;
   border-radius: 40px;
   overflow: hidden;
   border: 1px solid rgba(120, 68, 34, 0.12);
@@ -1140,31 +1154,12 @@ body.desktopPetDocument {
     linear-gradient(180deg, #fffdf8, #fff1df);
 }
 
-.storyHeroStage {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  pointer-events: none;
-}
-
-.storyHeroStage video,
-.storyHeroStage canvas {
-  width: min(560px, 82%);
-  height: 100%;
-  object-fit: contain;
-  object-position: bottom center;
-}
-
 .storyHeroCopy {
   position: relative;
   z-index: 2;
   max-width: 620px;
   text-align: center;
-  background: radial-gradient(ellipse at center, rgba(255, 248, 239, 0.82) 0%, rgba(255, 248, 239, 0.4) 60%, transparent 100%);
   padding: 20px;
-  border-radius: 30px;
 }
 
 .storyHeroCopy h1 {

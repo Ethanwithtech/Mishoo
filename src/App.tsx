@@ -1090,20 +1090,11 @@ function ControlPanel() {
         </button>
       </div>
 
-      {/* ─── Screen 1: the one thing that matters — a pet blocking your screen ─── */}
+      {/* ─── Screen 1: the one thing that matters — a pet blocking your screen ───
+          The pet is NOT shown on load; clicking summon plays the real full-screen
+          block effect (the break overlay), so nothing competes with the message and
+          there is no glass panel sitting on top of an autoplaying animal. */}
       <section className="storyHero">
-        <div className="storyHeroStage">
-          {PETS[settings.pet].video ? (
-            <ChromaKeyPet
-              key={settings.pet}
-              src={PETS[settings.pet].video as string}
-              restLoopStart={PETS[settings.pet].restLoopStart}
-              hasAlpha={Boolean(PETS[settings.pet].hasAlpha)}
-            />
-          ) : (
-            <PetPhoto pet={settings.pet} large />
-          )}
-        </div>
         <div className="storyHeroCopy">
           <p className="sectionEyebrow">{t.heroEyebrow}</p>
           <h1>{t.heroTitle}</h1>
