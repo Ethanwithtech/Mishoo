@@ -31,13 +31,49 @@ const CHAT_LINES = [
   'Finish this round, then we rest!',
 ];
 
+const PET_DIR = '/desktop-pet/golden-puppy';
 const GOLDEN_PUPPY_ASSETS: Record<PetMotion | 'poster', string> = {
-  poster: '/desktop-pet/golden-puppy/poster.webp',
-  idle: '/desktop-pet/golden-puppy/idle.webm',
-  walk: '/desktop-pet/golden-puppy/walk.webm',
-  jump: '/desktop-pet/golden-puppy/jump.webm',
-  rest: '/desktop-pet/golden-puppy/rest.webm',
+  poster: `${PET_DIR}/poster.webp`,
+  idle: `${PET_DIR}/idle.webm`,
+  walk: `${PET_DIR}/walk.webm`,
+  jump: `${PET_DIR}/jump.webm`,
+  rest: `${PET_DIR}/rest.webm`,
 };
+
+/**
+ * Optional dedicated directional / pickup clips. When these files exist they are
+ * used verbatim; otherwise the code falls back to the base clip (walk mirrored via
+ * CSS, pickup → jump). This lets new art drop in with no code change.
+ *   walk-left.webm / walk-right.webm — natural left/right walk cycles
+ *   pickup.webm  — reaction as the mouse lifts the pet
+ *   drop.webm    — reaction as the pet is set back down
+ */
+const OPTIONAL_CLIPS = {
+  walkLeft: `${PET_DIR}/walk-left.webm`,
+  walkRight: `${PET_DIR}/walk-right.webm`,
+  pickup: `${PET_DIR}/pickup.webm`,
+  drop: `${PET_DIR}/drop.webm`,
+};
+
+// Probe which optional clips actually exist, so we only use directional/pickup art
+// when the assets have been added.
+function useAvailableClips() {
+  const [available, setAvailable] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all(
+      Object.entries(OPTIONAL_CLIPS).map(([key, path]) =>
+        fetch(asset(path), { method: 'HEAD' })
+          .then((r) => [key, r.ok] as const)
+          .catch(() => [key, false] as const),
+      ),
+    ).then((entries) => {
+      if (!cancelled) setAvailable(Object.fromEntries(entries));
+    });
+    return () => { cancelled = true; };
+  }, []);
+  return available;
+}
 
 function readStored<T>(key: string, fallback: T): T {
   try {
@@ -86,6 +122,9 @@ export function DesktopPet() {
   const [remaining, setRemaining] = useState(WORK_SECONDS);
   const [completedWorkRounds, setCompletedWorkRounds] = useState(0);
   const [activeReaction, setActiveReaction] = useState<PetMotion | null>(null);
+  // 'carried' while the mouse is holding the pet up; 'dropping' briefly after release.
+  const [carryState, setCarryState] = useState<'none' | 'carried' | 'dropping'>('none');
+  const clips = useAvailableClips();
   const [animationKey, setAnimationKey] = useState(0);
   const [bubble, setBubble] = useState<string | null>(null);
   const [controlsRevealed, setControlsRevealed] = useState(false);
@@ -312,6 +351,7 @@ export function DesktopPet() {
   const onPointerMove = (event: React.PointerEvent) => {
     if (!drag.current.active) return;
     if (Math.hypot(event.screenX - drag.current.startX, event.screenY - drag.current.startY) > 4) {
+      if (!drag.current.moved) setCarryState('carried'); // first real movement = lifted
       drag.current.moved = true;
     }
     void window.mishoo?.movePet({ screenX: event.screenX, screenY: event.screenY });
@@ -319,10 +359,17 @@ export function DesktopPet() {
 
   const onPointerUp = () => {
     if (!drag.current.active) return;
-    const shouldInteract = !drag.current.moved;
+    const wasCarried = drag.current.moved;
     drag.current.active = false;
     void window.mishoo?.endPetDrag();
-    if (shouldInteract) interact();
+    if (wasCarried) {
+      // Play the set-down reaction, then settle back to normal motion.
+      setCarryState('dropping');
+      window.setTimeout(() => setCarryState('none'), clips.drop ? 1400 : 500);
+    } else {
+      setCarryState('none');
+      interact();
+    }
   };
 
   const addTodo = (event: React.FormEvent) => {
@@ -339,10 +386,32 @@ export function DesktopPet() {
       ? 'walk'
       : 'idle';
   const currentMotion = activeReaction ?? baseMotion;
+  const facingRight = patrol.direction === 1;
+
+  // Resolve the actual clip. Carry/drop and directional walk use dedicated art when
+  // present; otherwise fall back to the base clips (and CSS mirroring for direction).
+  let videoSrc: string;
+  let mirror = false; // CSS-mirror the base walk clip when no directional art exists
+  if (carryState === 'carried' && clips.pickup) {
+    videoSrc = OPTIONAL_CLIPS.pickup;
+  } else if (carryState === 'dropping' && clips.drop) {
+    videoSrc = OPTIONAL_CLIPS.drop;
+  } else if (currentMotion === 'walk' && facingRight && clips.walkRight) {
+    videoSrc = OPTIONAL_CLIPS.walkRight;
+  } else if (currentMotion === 'walk' && !facingRight && clips.walkLeft) {
+    videoSrc = OPTIONAL_CLIPS.walkLeft;
+  } else {
+    videoSrc = GOLDEN_PUPPY_ASSETS[currentMotion];
+    // No dedicated art for this state: CSS-mirror the base clip to face left. The
+    // source clips are authored facing right, so mirror only when facing left.
+    mirror = !facingRight;
+  }
+  const loopClip = currentMotion !== 'jump' && carryState !== 'dropping';
   const petVideoClassName = [
     'desktopPetImage',
     'desktopPetVideo',
     currentMotion === 'jump' ? 'interaction-jump' : '',
+    carryState === 'carried' ? 'is-carried' : '',
   ].filter(Boolean).join(' ');
 
   return (
@@ -411,16 +480,17 @@ export function DesktopPet() {
             </button>
           </div>
         </div>
-        <div className={`desktopPetVisual facing-${patrol.direction === 1 ? 'right' : 'left'}`}>
+        <div className="desktopPetVisual">
           <div className={`desktopPetMotion patrol-${patrol.mode}`}>
             <video
-              key={`${currentMotion}-${animationKey}`}
+              key={`${videoSrc}-${animationKey}`}
               className={petVideoClassName}
-              src={asset(GOLDEN_PUPPY_ASSETS[currentMotion])}
+              src={asset(videoSrc)}
               poster={asset(GOLDEN_PUPPY_ASSETS.poster)}
               aria-label="Mishoo golden retriever puppy desktop pet"
+              style={mirror ? { transform: 'scaleX(-1)' } : undefined}
               autoPlay
-              loop={currentMotion !== 'jump'}
+              loop={loopClip}
               muted
               playsInline
               preload="auto"

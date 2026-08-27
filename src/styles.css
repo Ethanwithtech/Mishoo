@@ -417,14 +417,54 @@ body.desktopPetDocument {
   border: 5px solid #fffaf4;
   border-radius: 28px;
   box-shadow: 0 16px 42px rgba(67, 31, 10, 0.18);
-  /* Layered "cozy corner" backdrop so the cut-out pets don't sit on a flat fill:
-     a warm sunburst glow, faint paw-print dots, and a soft floor gradient. */
+  background: linear-gradient(180deg, #fbe7d4, #f3d6b4);
+}
+
+/* Themed environment scene behind each transparent pet cut-out. Each is a cozy
+   room/outdoor vignette built from gradients: a light source up top, a wall wash,
+   a floor band with a soft contact shadow where the pet stands, and a window/plant
+   accent. If a real photo is dropped at /images/pets/scenes/<pet>.webp it renders
+   on top via .petPhoto::before below. */
+.petPhoto::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  /* floor + wall + light, shared base */
   background:
-    radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 0.65), transparent 55%),
-    radial-gradient(circle at 20% 18%, rgba(255, 205, 150, 0.22) 0 6px, transparent 7px),
-    radial-gradient(circle at 82% 30%, rgba(255, 205, 150, 0.2) 0 5px, transparent 6px),
-    radial-gradient(circle at 68% 12%, rgba(255, 205, 150, 0.16) 0 4px, transparent 5px),
-    linear-gradient(180deg, #ffe9cf 0%, #ffd9b3 55%, #f7c79a 100%);
+    radial-gradient(120% 60% at 50% 108%, rgba(90, 50, 20, 0.28), transparent 60%),
+    radial-gradient(circle at 50% 8%, rgba(255, 255, 255, 0.55), transparent 45%),
+    linear-gradient(180deg, var(--wall, #ffe6c4) 0%, var(--wall, #ffe6c4) 58%, var(--floor, #e8c39a) 58%, var(--floor, #e8c39a) 100%);
+}
+
+/* Optional real background image layer, only visible if the file exists. */
+.petPhoto::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: var(--scene, none);
+  background-size: cover;
+  background-position: center;
+}
+
+.petPhoto img { position: relative; z-index: 1; }
+
+/* Per-pet palettes + soft accent (window glow / greenery) via the ::after layer. */
+.petPhoto[data-pet="mishoo-cat"]   { --wall: #ffe0d0; --floor: #e7b79a; }   /* warm calico living room */
+.petPhoto[data-pet="cocoa-dog"]    { --wall: #ffedd0; --floor: #e6c398; }   /* sunny golden retriever */
+.petPhoto[data-pet="snow-rabbit"]  { --wall: #e4f0ff; --floor: #cdd9ea; }   /* cool snowy samoyed */
+.petPhoto[data-pet="pom-puppy"]    { --wall: #fff0e6; --floor: #eccdb4; }   /* soft cream pomeranian */
+.petPhoto[data-pet="lop-rabbit"]   { --wall: #eef3dd; --floor: #d3d6a8; }   /* meadow lop rabbit */
+.petPhoto[data-pet="bamboo-panda"] { --wall: #e2f0dd; --floor: #bcd0a8; }   /* bamboo grove panda */
+
+/* A window-light accent, unique-ish per pet, layered under the animal. */
+.petPhoto[data-pet]::after {
+  background:
+    radial-gradient(60% 40% at 82% 20%, rgba(255, 245, 210, 0.6), transparent 60%),
+    radial-gradient(120% 60% at 50% 108%, rgba(90, 50, 20, 0.28), transparent 60%),
+    radial-gradient(circle at 50% 8%, rgba(255, 255, 255, 0.5), transparent 45%),
+    linear-gradient(180deg, var(--wall) 0%, var(--wall) 58%, var(--floor) 58%, var(--floor) 100%);
 }
 
 .petPhotoLarge {
@@ -436,9 +476,14 @@ body.desktopPetDocument {
 }
 
 .petPhoto img {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  /* contain, not cover: these are transparent cut-outs — cropping would clip the
+     animal and hide the scene behind it. */
+  object-fit: contain;
+  object-position: bottom center;
   display: block;
 }
 

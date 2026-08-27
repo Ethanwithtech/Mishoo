@@ -469,8 +469,11 @@ function updateStats(next: Partial<Stats>) {
 function PetPhoto({ pet, large = false }: { pet: PetId; large?: boolean }) {
   const meta = PETS[pet];
 
+  // data-pet drives a themed environment scene behind the transparent pet cut-out
+  // (see .petScene-* in styles.css). If a real background image is later dropped at
+  // /images/pets/scenes/<pet>.webp it layers on top of the CSS scene automatically.
   return (
-    <figure className={`petPhoto ${large ? 'petPhotoLarge' : ''}`}>
+    <figure className={`petPhoto ${large ? 'petPhotoLarge' : ''}`} data-pet={pet}>
       <img src={meta.image} alt={meta.name.zh} draggable={false} />
     </figure>
   );
