@@ -437,16 +437,33 @@ body.desktopPetDocument {
     linear-gradient(180deg, var(--wall, #ffe6c4) 0%, var(--wall, #ffe6c4) 58%, var(--floor, #e8c39a) 58%, var(--floor, #e8c39a) 100%);
 }
 
-/* Optional real background image layer, only visible if the file exists. */
+/* Real photographic scene layer. Sits above the CSS fallback scene (::after) and
+   below the pet cut-out. Zoomed into the floor/lower-wall band and lightly veiled so
+   a detailed room does not fight the animal at thumbnail size. */
 .petPhoto::before {
   content: '';
   position: absolute;
   inset: 0;
   z-index: 0;
-  background-image: var(--scene, none);
-  background-size: cover;
-  background-position: center;
+  background-image:
+    linear-gradient(180deg, rgba(255, 248, 239, 0.34), rgba(255, 240, 222, 0.1) 45%, rgba(120, 70, 30, 0.16) 100%),
+    var(--scene, none);
+  /* Zoom in: at 88px the whole room reads as noise, so favour floor + lower wall. */
+  background-size: auto, 210%;
+  background-position: center, 42% 86%;
+  background-repeat: no-repeat;
 }
+
+/* The large hero/companion photo has room to show more of the scene. */
+.petPhotoLarge::before {
+  background-size: auto, cover;
+  background-position: center, center 64%;
+}
+
+/* Shared cosy home scene for every pet until per-animal scenes are generated.
+   Relative to the emitted CSS (assets/app.css) so it resolves under the /mishoo/
+   subpath as well as at the domain root. */
+.petPhoto { --scene: url('../images/pets/scenes-home.webp'); }
 
 .petPhoto img { position: relative; z-index: 1; }
 
